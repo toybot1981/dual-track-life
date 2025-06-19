@@ -1,0 +1,44 @@
+{
+  "name": "dual-track-life-workspace",
+  "version": "1.0.0",
+  "description": "双轨人生项目工作区",
+  "scripts": {
+    "setup": "chmod +x scripts/*.sh && ./scripts/setup.sh",
+    "start": "./scripts/start.sh",
+    "stop": "./scripts/stop.sh",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend-java && mvn spring-boot:run",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend-java && mvn clean package",
+    "test:frontend": "cd frontend && npm run test",
+    "test:backend": "cd backend-java && mvn test",
+    "lint:frontend": "cd frontend && npm run lint",
+    "format:frontend": "cd frontend && npm run format",
+    "clean": "rm -rf frontend/node_modules frontend/dist backend-java/target logs/*.log"
+  },
+  "workspaces": [
+    "frontend"
+  ],
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/dual-track-life.git"
+  },
+  "keywords": [
+    "life-management",
+    "vue3",
+    "spring-boot",
+    "typescript",
+    "java",
+    "sqlite"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
+

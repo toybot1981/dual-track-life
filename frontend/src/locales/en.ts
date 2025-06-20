@@ -147,7 +147,8 @@ export default {
       virtualSimulation: 'Virtual Life Simulation',
       viewAnalytics: 'View Analytics',
       parallelUniverses: 'Parallel Universes',
-      memoryRecorder: 'Memory Recorder'
+      memoryRecorder: 'Memory Recorder',
+      lifeAgent: 'Life Agent'
     },
 
     // 事件时间轴
@@ -714,6 +715,47 @@ export default {
       thisWeek: 'This week',
       thisMonth: 'This month',
       thisYear: 'This year'
+    }
+  },
+
+  // Life Agent
+  lifeAgent: {
+    title: 'Life Agent',
+    subtitle: 'Your AI Life Planning Assistant',
+    connected: 'Connected',
+    disconnected: 'Disconnected',
+    inputPlaceholder: 'Ask me anything about life planning, goal setting, or evaluation...',
+    
+    quickActions: {
+      planning: 'Life Planning',
+      evaluation: 'Life Evaluation',
+      goal: 'Goal Analysis'
+    },
+    
+    messages: {
+      welcome: 'Hello! I\'m your Life Agent. How can I help you today?',
+      thinking: 'Thinking...',
+      error: 'Sorry, I encountered an error. Please try again.',
+      networkError: 'Network connection failed. Please check your connection.'
+    },
+    
+    features: {
+      planning: {
+        title: 'Life Planning',
+        description: 'Create personalized life plans based on your goals and current situation'
+      },
+      evaluation: {
+        title: 'Life Evaluation',
+        description: 'Analyze your current life status and get professional insights'
+      },
+      goalAnalysis: {
+        title: 'Goal Analysis',
+        description: 'Evaluate the feasibility of your goals and get actionable recommendations'
+      },
+      conversation: {
+        title: 'Smart Conversation',
+        description: 'Natural conversation about life planning and personal development'
+      }
     }
   }
 }

@@ -1,45 +1,59 @@
 # Dependencies
 node_modules/
-/frontend/node_modules/
-/frontend/dist/
-
-# Compiled class files
-*.class
-/backend-java/target/
-/backend-java-alt/target/
-
-# Build output
-**/target/
-**/build/
-**/dist/
-**/out/
-
-# IDE
-.idea/
-*.iml
-.vscode/
-.DS_Store
-**/.DS_Store
-
-# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Local env files
+# Build outputs
+dist/
+build/
+
+# Environment variables
 .env
 .env.local
-.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Editor directories and files
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Java
+target/
+*.class
+*.jar
+*.war
+*.ear
 
 # Maven
 .mvn/
 mvnw
 mvnw.cmd
+
+# Temporary files
+*.tmp
+*.temp
+
+# Screenshots
+screenshots/
+

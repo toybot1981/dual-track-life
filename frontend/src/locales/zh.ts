@@ -151,7 +151,8 @@ export default {
       virtualSimulation: '虚拟人生模拟',
       viewAnalytics: '查看分析',
       parallelUniverses: '平行宇宙',
-      memoryRecorder: '回忆记录器'
+      memoryRecorder: '回忆记录器',
+      lifeAgent: '人生智能体'
     },
 
     // 事件时间轴
@@ -718,6 +719,47 @@ export default {
       thisWeek: '本周',
       thisMonth: '本月',
       thisYear: '今年'
+    }
+  },
+
+  // Life Agent
+  lifeAgent: {
+    title: '人生智能体',
+    subtitle: '您的AI人生规划助手',
+    connected: '已连接',
+    disconnected: '未连接',
+    inputPlaceholder: '询问我关于人生规划、目标设定或评价的任何问题...',
+    
+    quickActions: {
+      planning: '人生规划',
+      evaluation: '人生评价',
+      goal: '目标分析'
+    },
+    
+    messages: {
+      welcome: '您好！我是您的人生智能体。今天我能为您做些什么？',
+      thinking: '思考中...',
+      error: '抱歉，我遇到了错误。请重试。',
+      networkError: '网络连接失败。请检查您的连接。'
+    },
+    
+    features: {
+      planning: {
+        title: '人生规划',
+        description: '基于您的目标和现状制定个性化的人生规划'
+      },
+      evaluation: {
+        title: '人生评价',
+        description: '分析您当前的人生状态并获得专业洞察'
+      },
+      goalAnalysis: {
+        title: '目标分析',
+        description: '评估您目标的可行性并获得可执行的建议'
+      },
+      conversation: {
+        title: '智能对话',
+        description: '关于人生规划和个人发展的自然对话'
+      }
     }
   }
 }

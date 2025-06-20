@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+/frontend/node_modules/
+/frontend/dist/
+
+# Compiled class files
+*.class
+/backend-java/target/
+/backend-java-alt/target/
+
+# Build output
+**/target/
+**/build/
+**/dist/
+**/out/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+**/.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Editor directories and files
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd

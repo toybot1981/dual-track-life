@@ -11,6 +11,7 @@ export interface Event {
   emotion?: string
   importance?: number
   location?: string
+  impact?: string
   userId?: number
   createdAt?: string
   updatedAt?: string

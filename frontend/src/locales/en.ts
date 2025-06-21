@@ -718,6 +718,56 @@ export default {
     }
   },
 
+  // AI Service Related Translations
+  ai: {
+    analyzing: 'AI is analyzing...',
+    eventEvaluation: {
+      title: 'Event AI Evaluation',
+      overallAnalysis: 'Overall Analysis',
+      overallScore: 'Overall Score',
+      emotionalImpact: 'Emotional Impact',
+      growthPotential: 'Growth Potential',
+      lifeSignificance: 'Life Significance',
+      insights: 'Deep Insights',
+      strengths: 'Strengths Analysis',
+      improvements: 'Improvement Suggestions',
+      futureOpportunities: 'Future Opportunities',
+      recommendations: 'Action Recommendations',
+      immediate: 'Immediate Actions',
+      shortTerm: 'Short-term Planning',
+      longTerm: 'Long-term Development',
+      noEvaluation: 'No AI evaluation yet',
+      startEvaluation: 'Start AI Evaluation'
+    },
+    planAnalysis: {
+      title: 'Virtual Life Plan AI Analysis',
+      subtitle: 'Intelligent analysis of your life plan',
+      feasibilityAssessment: 'Feasibility Assessment',
+      overallScore: 'Overall Score',
+      timeRealistic: 'Time Realistic',
+      resourceAvailability: 'Resource Availability',
+      skillRequirement: 'Skill Requirement',
+      marketOpportunity: 'Market Opportunity',
+      riskAssessment: 'Risk Assessment',
+      riskLevel: 'Risk Level',
+      mainRisks: 'Main Risks',
+      mitigationStrategies: 'Mitigation Strategies',
+      optimization: 'Optimization Suggestions',
+      priorityAdjustments: 'Priority Adjustments',
+      timelineOptimization: 'Timeline Optimization',
+      resourceOptimization: 'Resource Optimization',
+      noAnalysis: 'No AI analysis yet',
+      startAnalysis: 'Start AI Analysis'
+    },
+    chat: {
+      title: 'AI Chat',
+      eventContext: 'Deep conversation based on current event',
+      planContext: 'Deep conversation based on current plan',
+      placeholder: 'Type your question...',
+      suggestions: 'Suggested questions:'
+    }
+  },
+
   // Life Agent
   lifeAgent: {
     title: 'Life Agent',
@@ -733,7 +783,7 @@ export default {
     },
     
     messages: {
-      welcome: 'Hello! I\'m your Life Agent. How can I help you today?',
+      welcome: 'Hello! I am your Life Agent. What can I help you with today?',
       thinking: 'Thinking...',
       error: 'Sorry, I encountered an error. Please try again.',
       networkError: 'Network connection failed. Please check your connection.'
@@ -746,11 +796,11 @@ export default {
       },
       evaluation: {
         title: 'Life Evaluation',
-        description: 'Analyze your current life status and get professional insights'
+        description: 'Comprehensive analysis of your current life status and progress'
       },
-      goalAnalysis: {
+      goal: {
         title: 'Goal Analysis',
-        description: 'Evaluate the feasibility of your goals and get actionable recommendations'
+        description: 'Analyze goal feasibility and provide optimization suggestions'
       },
       conversation: {
         title: 'Smart Conversation',

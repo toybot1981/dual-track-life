@@ -325,6 +325,15 @@
                       
                       <div class="flex items-center space-x-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
+                          @click="openEventAIEvaluation(event)"
+                          class="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                          title="AI评价"
+                        >
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                          </svg>
+                        </button>
+                        <button
                           v-if="event.importance && event.importance >= 7"
                           @click="triggerParallelUniverse(event)"
                           class="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
@@ -404,6 +413,20 @@
         </div>
       </div>
     </div>
+
+    <!-- Event AI Evaluation Modal -->
+    <EventAIEvaluation 
+      v-if="showEventAIEvaluation && evaluatingEvent"
+      :event="evaluatingEvent"
+      @close="closeEventAIEvaluation"
+    />
+
+    <!-- Plan AI Analysis Modal -->
+    <PlanAIAnalysis 
+      v-if="showPlanAIAnalysis && analyzingPlan"
+      :plan="analyzingPlan"
+      @close="closePlanAIAnalysis"
+    />
   </div>
 </template>
 
@@ -419,6 +442,8 @@ import SimulationModal from '@/components/SimulationModal.vue'
 import ParallelUniverseModal from '@/components/ParallelUniverseModal.vue'
 import AILifeCoach from '@/components/AILifeCoach.vue'
 import LifeAgentChat from '@/components/LifeAgentChat.vue'
+import EventAIEvaluation from '@/components/EventAIEvaluation.vue'
+import PlanAIAnalysis from '@/components/PlanAIAnalysis.vue'
 import {
   Calendar,
   Plus,
@@ -448,8 +473,12 @@ const showEventModal = ref(false)
 const showSimulationModal = ref(false)
 const showParallelUniverseModal = ref(false)
 const showLifeAgentModal = ref(false)
+const showEventAIEvaluation = ref(false)
+const showPlanAIAnalysis = ref(false)
 const editingEvent = ref<Event | null>(null)
 const triggeringEvent = ref<Event | null>(null)
+const evaluatingEvent = ref<Event | null>(null)
+const analyzingPlan = ref<any>(null)
 const searchQuery = ref('')
 const selectedCategory = ref('')
 const showLanguageMenu = ref(false)
@@ -569,6 +598,27 @@ const handleUniverseStarted = (universe: any) => {
   console.log('New parallel universe started:', universe)
   // Navigate to timeline view to show the new parallel universe
   router.push('/timeline')
+}
+
+// AI Evaluation methods
+const openEventAIEvaluation = (event: Event) => {
+  evaluatingEvent.value = event
+  showEventAIEvaluation.value = true
+}
+
+const closeEventAIEvaluation = () => {
+  showEventAIEvaluation.value = false
+  evaluatingEvent.value = null
+}
+
+const openPlanAIAnalysis = (plan: any) => {
+  analyzingPlan.value = plan
+  showPlanAIAnalysis.value = true
+}
+
+const closePlanAIAnalysis = () => {
+  showPlanAIAnalysis.value = false
+  analyzingPlan.value = null
 }
 
 const formatDate = (dateString: string) => {

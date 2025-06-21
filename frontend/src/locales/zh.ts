@@ -722,6 +722,56 @@ export default {
     }
   },
 
+  // AI服务相关翻译
+  ai: {
+    analyzing: 'AI正在分析中...',
+    eventEvaluation: {
+      title: '事件AI评价',
+      overallAnalysis: '综合分析',
+      overallScore: '综合评分',
+      emotionalImpact: '情感影响',
+      growthPotential: '成长潜力',
+      lifeSignificance: '人生意义',
+      insights: '深度洞察',
+      strengths: '优势分析',
+      improvements: '改进建议',
+      futureOpportunities: '未来机会',
+      recommendations: '行动建议',
+      immediate: '即时行动',
+      shortTerm: '短期规划',
+      longTerm: '长期发展',
+      noEvaluation: '暂无AI评价',
+      startEvaluation: '开始AI评价'
+    },
+    planAnalysis: {
+      title: '虚拟人生规划AI分析',
+      subtitle: '智能分析您的人生规划',
+      feasibilityAssessment: '可行性评估',
+      overallScore: '综合评分',
+      timeRealistic: '时间合理性',
+      resourceAvailability: '资源可用性',
+      skillRequirement: '技能要求',
+      marketOpportunity: '市场机会',
+      riskAssessment: '风险评估',
+      riskLevel: '风险等级',
+      mainRisks: '主要风险',
+      mitigationStrategies: '缓解策略',
+      optimization: '优化建议',
+      priorityAdjustments: '优先级调整',
+      timelineOptimization: '时间线优化',
+      resourceOptimization: '资源优化',
+      noAnalysis: '暂无AI分析',
+      startAnalysis: '开始AI分析'
+    },
+    chat: {
+      title: 'AI对话',
+      eventContext: '基于当前事件的深度对话',
+      planContext: '基于当前规划的深度对话',
+      placeholder: '输入您的问题...',
+      suggestions: '建议问题：'
+    }
+  },
+
   // Life Agent
   lifeAgent: {
     title: '人生智能体',

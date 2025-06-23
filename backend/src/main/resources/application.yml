@@ -1,6 +1,45 @@
 spring:
   application:
-    name: backend
+    name: dual-track-life-backend
+
+  # Spring AI Configuration
+  ai:
+    # 阿里云通义千问配置
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY}
+    
+    # # OpenAI兼容模式配置（使用阿里云通义千问）
+    # openai:
+    #   base-url: https://dashscope.aliyuncs.com/compatible-mode
+    #   api-key: ${DASHSCOPE_API_KEY}
+    #   chat:
+    #     options:
+    #       model: qwen-max
+    #       temperature: 0.7
+    #       max-tokens: 2000
+    
+    # 聊天配置
+    chat:
+      client:
+        observations:
+          include-input: true
+      observations:
+        include-completion: true
+        include-prompt: true
+        include-error-logging: true
+
+  # 数据库配置
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
 
 # 服务器配置
 server:
@@ -13,4 +52,16 @@ logging:
   level:
     com.dualtracklife.lifeagent: INFO
     org.springframework.web: INFO
+    org.springframework.ai: INFO
+    com.alibaba.dashscope.api: INFO
+
+# 管理端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
 

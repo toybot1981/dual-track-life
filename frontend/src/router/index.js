@@ -107,6 +107,51 @@ const routes = [
     }
   },
   {
+    path: '/events/:id/edit',
+    name: 'EditEvent',
+    component: () => import('@/views/EditEventView.vue'),
+    meta: {
+      title: '编辑事件',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/trajectory',
+    name: 'Trajectory',
+    component: () => import('@/views/TrajectoryView.vue'),
+    meta: {
+      title: '人生轨迹',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/analysis',
+    name: 'Analysis',
+    component: () => import('@/views/AnalysisView.vue'),
+    meta: {
+      title: '智能分析',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/memory',
+    name: 'Memory',
+    component: () => import('@/views/MemoryRecorderView.vue'),
+    meta: {
+      title: '记忆录制',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/timeline',
+    name: 'Timeline',
+    component: () => import('@/views/TimelineView.vue'),
+    meta: {
+      title: '时间线',
+      requiresAuth: true
+    }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/ProfileView.vue'),
@@ -139,6 +184,15 @@ const routes = [
     component: () => import('@/views/RegisterView.vue'),
     meta: {
       title: '注册',
+      requiresAuth: false
+    }
+  },
+  {
+    path: '/about',
+    name: 'About',
+    component: () => import('@/views/AboutView.vue'),
+    meta: {
+      title: '关于我们',
       requiresAuth: false
     }
   },
@@ -199,6 +253,12 @@ router.beforeEach((to, from, next) => {
   }
 
   next()
+})
+
+// 全局后置钩子
+router.afterEach((to, from) => {
+  // 页面访问统计
+  console.log(`导航到: ${to.path}`)
 })
 
 export default router

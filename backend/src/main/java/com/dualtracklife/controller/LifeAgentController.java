@@ -31,6 +31,12 @@ public class LifeAgentController {
     @Autowired
     private AIConversationService aiConversationService;
     
+    @Autowired
+    private UserService userService;
+    
+    @Autowired
+    private EventService eventService;
+    
     /**
      * 健康检查接口
      */
@@ -346,18 +352,56 @@ public class LifeAgentController {
     }
     
     /**
-     * 获取用户信息接口（保持向后兼容）
+     * 获取用户信息接口（增强版）
      */
     @GetMapping("/user/{userId}")
     public ResponseEntity<Map<String, Object>> getUserInfo(@PathVariable String userId) {
+        try {
+            Long userIdLong = Long.valueOf(userId);
+            User user = userService.getUserById(userIdLong);
+            
+            if (user == null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("userId", userId);
+                response.put("name", "用户" + userId);
+                response.put("status", "demo");
+                response.put("joinDate", "2024-01-01");
+                response.put("availableFeatures", new String[]{"AI角色对话", "人生轨迹分析", "智能推荐", "趋势预测"});
+                return ResponseEntity.ok(response);
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("userId", user.getId());
+            response.put("username", user.getUsername());
+            response.put("displayName", user.getDisplayName());
+            response.put("status", user.getIsActive() ? "active" : "inactive");
+            response.put("joinDate", user.getCreatedAt().toLocalDate());
+            response.put("lastLogin", user.getLastLoginAt());
+            response.put("emailVerified", user.getEmailVerified());
+            response.put("availableFeatures", new String[]{"AI角色对话", "人生轨迹分析", "智能推荐", "趋势预测", "事件管理"});
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (NumberFormatException e) {
+            // 兼容字符串userId的情况
+            Map<String, Object> response = new HashMap<>();
+            response.put("userId", userId);
+            response.put("name", "用户" + userId);
+            response.put("status", "demo");
+            response.put("joinDate", "2024-01-01");
+            response.put("availableFeatures", new String[]{"AI角色对话", "人生轨迹分析", "智能推荐", "趋势预测"});
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(createErrorResponse("获取用户信息失败"));
+        }
+    }
+    
+    // 辅助方法
+    private Map<String, Object> createErrorResponse(String message) {
         Map<String, Object> response = new HashMap<>();
-        response.put("userId", userId);
-        response.put("name", "用户" + userId);
-        response.put("status", "active");
-        response.put("joinDate", "2024-01-01");
-        response.put("availableFeatures", new String[]{"AI角色对话", "人生轨迹分析", "智能推荐", "趋势预测"});
-        
-        return ResponseEntity.ok(response);
+        response.put("success", false);
+        response.put("error", message);
+        return response;
     }
 }
 

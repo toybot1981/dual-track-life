@@ -64,6 +64,13 @@ public class LifeEvent {
     // 关联的AI角色建议
     private String recommendedRoles;
     
+    // 事件地点
+    private String location;
+    
+    // 是否私密事件
+    @Column(nullable = false)
+    private Boolean isPrivate = false;
+    
     // 事件状态：draft, completed, archived
     @Column(nullable = false)
     private String status = "completed";
@@ -146,6 +153,12 @@ public class LifeEvent {
     
     public String getRecommendedRoles() { return recommendedRoles; }
     public void setRecommendedRoles(String recommendedRoles) { this.recommendedRoles = recommendedRoles; }
+    
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
+    
+    public Boolean getIsPrivate() { return isPrivate; }
+    public void setIsPrivate(Boolean isPrivate) { this.isPrivate = isPrivate; }
     
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

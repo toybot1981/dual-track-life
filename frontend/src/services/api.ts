@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // API基础配置 - 使用模拟模式
-const API_BASE_URL = 'http://localhost:8080/api'
+const API_BASE_URL = 'http://localhost:10000/api'
 const MOCK_MODE = true // 启用模拟模式
 
 // Demo账号数据

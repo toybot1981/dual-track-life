@@ -18,7 +18,7 @@ public class LifeAgentApplication {
     public static void main(String[] args) {
         SpringApplication.run(LifeAgentApplication.class, args);
         System.out.println("Life Agent服务启动成功！");
-        System.out.println("健康检查: http://localhost:8080/api/life-agent/health");
+        System.out.println("健康检查: http://localhost:10001/api/life-agent/health");
     }
 }
 

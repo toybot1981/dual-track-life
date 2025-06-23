@@ -1,6 +1,6 @@
-package com.dualtracklife.service;
+package com.dualtracklife.user.service;
 
-import com.dualtracklife.model.User;
+import com.dualtracklife.user.model.User;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
 

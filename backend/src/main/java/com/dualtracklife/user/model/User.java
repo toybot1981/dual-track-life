@@ -1,4 +1,4 @@
-package com.dualtracklife.model;
+package com.dualtracklife.user.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;

@@ -1,7 +1,8 @@
-package com.dualtracklife.service;
+package com.dualtracklife.lifeevent.service;
 
-import com.dualtracklife.model.LifeEvent;
-import com.dualtracklife.model.User;
+import com.dualtracklife.lifeevent.model.LifeEvent;
+import com.dualtracklife.user.model.User;
+import com.dualtracklife.user.service.UserService;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.annotation.PostConstruct;

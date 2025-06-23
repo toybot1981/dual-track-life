@@ -1,7 +1,7 @@
-package com.dualtracklife.controller;
+package com.dualtracklife.user.controller;
 
-import com.dualtracklife.model.User;
-import com.dualtracklife.service.UserService;
+import com.dualtracklife.user.model.User;
+import com.dualtracklife.user.service.UserService;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Autowired;

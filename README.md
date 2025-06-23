@@ -1,156 +1,68 @@
-# Dual Track Life
+# 双轨人生 (Dual Track Life)
 
-一个创新的人生管理平台，让您记录真实人生轨迹的同时，通过AI驱动的虚拟人生模拟探索无限可能。
+一个帮助用户探索和规划人生可能性的智能助手应用。
 
-## 🌟 项目特色
+## 项目简介
 
-- **双轨设计**: 真实与虚拟人生并行记录
-- **AI驱动**: 人生智能体提供个性化规划和建议  
-- **多功能**: 事件记录、虚拟模拟、平行宇宙、回忆记录器
-- **多语言**: 完整的中英文支持
-- **响应式**: 完美适配桌面和移动设备
+双轨人生是一个创新的生活规划和人生探索平台，它通过AI技术帮助用户：
 
-## 🚀 在线体验
+- 探索人生的多种可能性
+- 获取个性化的人生建议
+- 记录和分析重要生活事件
+- 进行深度的自我反思
+- 规划未来的发展轨迹
 
-**网站地址**: https://jzjbridz.manus.space
+## 技术栈
 
-点击 "Try Demo" 即可体验所有功能，无需注册！
-
-## 🏗️ 技术架构
+### 后端
+- Spring Boot
+- Spring AI
+- DashScope AI
+- H2 Database
+- JPA
 
 ### 前端
-- **框架**: Vue 3 + TypeScript + Vite
-- **样式**: Tailwind CSS
-- **状态管理**: Pinia
-- **路由**: Vue Router
-- **国际化**: Vue I18n
-- **图标**: Lucide Vue
+- Vue.js 3
+- TypeScript
+- Tailwind CSS
 
-### 后端 (Life Agent)
-- **框架**: Spring Boot 3.2
-- **语言**: Java 17
-- **API**: RESTful API
-- **功能**: 智能对话、人生规划、评价分析
+## 主要功能
 
-## 📦 项目结构
+- 🤖 AI生命导师：提供个性化的人生建议和指导
+- 📝 事件记录：记录和分析重要的人生事件
+- 🔄 平行宇宙：探索不同的人生可能性
+- 📊 轨迹分析：分析个人成长轨迹和发展趋势
+- 💭 深度反思：辅助进行有意义的自我反思
 
-```
-dual-track-life-main/
-├── frontend/                 # Vue 3 前端应用
-│   ├── src/
-│   │   ├── components/      # 组件库
-│   │   ├── views/          # 页面视图
-│   │   ├── stores/         # Pinia状态管理
-│   │   ├── locales/        # 国际化文件
-│   │   └── router/         # 路由配置
-│   ├── dist/               # 构建输出
-│   └── package.json
-├── backend/                 # Spring Boot后端服务
-│   ├── src/main/java/      # Java源码
-│   ├── src/main/resources/ # 配置文件
-│   ├── start-backend.sh    # 启动脚本
-│   └── pom.xml
-└── README.md
+## 快速开始
+
+### 环境要求
+- Java 17+
+- Node.js 16+
+- Maven 3.6+
+
+### 后端启动
+```bash
+cd backend
+./mvnw spring-boot:run
 ```
 
-## 🎯 核心功能
-
-### 1. 真实人生记录
-- 记录工作成就、个人成长、人际关系等人生事件
-- 支持多媒体附件、地理位置、重要性评级
-- 时间轴视图展示人生轨迹
-
-### 2. 虚拟人生模拟
-- AI驱动的人生选择模拟
-- 探索不同决策的可能结果
-- 虚拟角色成长和技能发展
-
-### 3. 平行宇宙
-- 基于真实事件创建假设场景
-- 探索"如果当时选择不同会怎样"
-- 多维度人生可能性分析
-
-### 4. 回忆记录器
-- 多媒体回忆记录和管理
-- AI情感分析和分类
-- 智能标签和搜索功能
-
-### 5. 人生智能体 (Life Agent)
-- **智能对话**: 自然语言人生咨询
-- **人生规划**: 个性化规划生成
-- **人生评价**: 多维度状态分析
-- **目标分析**: 可行性评估和建议
-
-### 6. AI生活教练
-- 基于数据的个性化洞察
-- 生活建议和改进方案
-- 进度跟踪和目标管理
-
-## 🛠️ 本地开发
-
-### 前端开发
+### 前端启动
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-### 后端开发
-```bash
-cd backend
-./start-backend.sh
-# 或者
-mvn spring-boot:run
-```
+## 环境变量配置
 
-## 🌐 部署
+后端需要配置以下环境变量：
+- DASHSCOPE_API_KEY：阿里云通义千问API密钥
 
-### 前端部署
-```bash
-cd frontend
-npm run build
-# 将 dist/ 目录部署到静态托管服务
-```
+## 贡献指南
 
-### 后端部署
-```bash
-cd backend
-mvn clean package
-java -jar target/backend-1.0.0.jar
-```
+欢迎提交Issue和Pull Request来帮助改进项目！
 
-## 🔧 环境要求
-
-- **Node.js**: 18+
-- **Java**: 17+
-- **Maven**: 3.6+
-
-## 📱 移动端支持
-
-网站采用响应式设计，完美适配：
-- 📱 手机 (iOS/Android)
-- 📱 平板电脑
-- 💻 桌面电脑
-
-## 🌍 国际化
-
-支持语言：
-- 🇨🇳 简体中文
-- 🇺🇸 English
-
-## 🤝 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
-## 📄 许可证
+## 许可证
 
 MIT License
-
-## 🎉 致谢
-
-感谢所有为这个项目做出贡献的开发者！
-
----
-
-**立即体验**: https://jzjbridz.manus.space 🚀
-

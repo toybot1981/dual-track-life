@@ -1,7 +1,7 @@
-package com.dualtracklife.lifeagent.controller;
+package com.dualtracklife.controller;
 
-import com.dualtracklife.lifeagent.model.*;
-import com.dualtracklife.lifeagent.service.*;
+import com.dualtracklife.model.*;
+import com.dualtracklife.service.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Autowired;

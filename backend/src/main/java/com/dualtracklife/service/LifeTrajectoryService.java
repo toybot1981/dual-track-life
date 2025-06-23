@@ -1,7 +1,6 @@
-package com.dualtracklife.lifeagent.service;
+package com.dualtracklife.service;
 
-import com.dualtracklife.lifeagent.model.LifeEvent;
-import com.dualtracklife.lifeagent.model.AIRole;
+import com.dualtracklife.model.*;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 

@@ -9,7 +9,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
  * 
  * @author Life Agent Team
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.dualtracklife")
 @EnableAutoConfiguration(exclude = {
     org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class
 })

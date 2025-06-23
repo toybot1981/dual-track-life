@@ -1,4 +1,4 @@
-package com.dualtracklife.lifeagent.model;
+package com.dualtracklife.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;

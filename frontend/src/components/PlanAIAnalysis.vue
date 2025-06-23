@@ -253,7 +253,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useAIStore } from '@/stores/aiService'
+import { useAIServiceStore } from '@/stores/aiService'
 
 interface Plan {
   id: string
@@ -272,7 +272,7 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const aiStore = useAIStore()
+const aiStore = useAIServiceStore()
 const chatInput = ref('')
 
 const analysis = computed(() => aiStore.getPlanAnalysis(props.plan.id))
@@ -290,18 +290,26 @@ const startAnalysis = async () => {
     timeline: props.plan.timeline
   })
 }
-
+  
 const sendMessage = async () => {
   if (!chatInput.value.trim()) return
   
-  const message = chatInput.value
+  const message = chatInput.value.trim()
   chatInput.value = ''
   
-  await aiStore.sendMessage(message, { planId: props.plan.id })
+  // 需要先获取或创建对话ID
+  const conversationId = 1 // 临时使用固定ID
+  const userId = 1 // 临时用户ID
+  
+  await aiStore.sendMessage(conversationId, userId, message)
 }
 
 const sendSuggestion = async (suggestion: string) => {
-  await aiStore.sendMessage(suggestion, { planId: props.plan.id })
+  // 需要先获取或创建对话ID
+  const conversationId = 1 // 临时使用固定ID
+  const userId = 1 // 临时用户ID
+  
+  await aiStore.sendMessage(conversationId, userId, suggestion)
 }
 
 onMounted(() => {

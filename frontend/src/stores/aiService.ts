@@ -1,6 +1,110 @@
 import { ref, reactive } from 'vue'
 import { defineStore } from 'pinia'
 
+// AI角色接口定义
+export interface AIRole {
+  roleId: string
+  roleName: string
+  roleType: string
+  description: string
+  expertise: string[]
+  personality: string[]
+  isActive: boolean
+}
+
+// 用户与AI角色关系接口
+export interface UserAIRelationship {
+  userId: number
+  roleId: string
+  relationshipLevel: number
+  totalConversations: number
+  lastConversationAt: string
+  satisfactionScore: number
+  isPrimaryMentor: boolean
+}
+
+// AI对话会话接口
+export interface AIConversation {
+  id: number
+  userId: number
+  roleId: string
+  sessionTitle: string
+  conversationType: string
+  relatedEventId?: number
+  relatedGoalId?: number
+  status: string
+  summary?: string
+  keyInsights?: string
+  satisfactionRating?: number
+  startedAt: string
+  lastActiveAt: string
+  endedAt?: string
+}
+
+// AI消息接口
+export interface AIMessage {
+  id: number
+  conversationId: number
+  userId: number
+  roleId: string
+  messageType: 'user' | 'ai' | 'system'
+  content: string
+  contextInfo?: string
+  confidence?: number
+  emotionalAnalysis?: string
+  userFeedback?: string
+  messageOrder: number
+  isKeyMessage: boolean
+  createdAt: string
+}
+
+// 人生事件接口
+export interface LifeEvent {
+  id?: number
+  userId: number
+  title: string
+  description: string
+  eventType: string
+  eventDate: string
+  emotionalState?: string
+  emotionalIntensity?: number
+  importanceLevel?: number
+  isMilestone: boolean
+  tags?: string
+  lifeDomains?: string
+  impactTimeframe?: string
+  recommendedRoles?: string
+  status: string
+}
+
+// 人生轨迹概览接口
+export interface LifeTrajectoryOverview {
+  userId: number
+  totalEvents: number
+  milestoneEvents: number
+  recentEvents: LifeEvent[]
+  lifeDomainDistribution: Record<string, number>
+  emotionalTrend: EmotionalTrend
+  growthInsights: string[]
+}
+
+// 情感趋势接口
+export interface EmotionalTrend {
+  overallTrend: string
+  averageIntensity: number
+  emotionalDistribution: Record<string, number>
+}
+
+// 对话统计接口
+export interface ConversationStats {
+  totalConversations: number
+  totalMessages: number
+  activeConversations: number
+  roleInteractionStats: Record<string, number>
+  averageSessionDuration: number
+}
+
+// 保持原有的评价和分析接口
 export interface AIEvaluation {
   eventId: string
   evaluationId: string
@@ -48,353 +152,566 @@ export interface PlanAnalysis {
   }
 }
 
-export interface ChatMessage {
-  messageId: string
-  timestamp: string
-  type: 'user' | 'ai'
-  message: string
-  suggestions?: string[]
-  eventId?: string
-  planId?: string
-}
-
-export const useAIStore = defineStore('ai', () => {
-  const isConnected = ref(true)
+export const useAIServiceStore = defineStore('aiService', () => {
+  // 状态管理
   const isLoading = ref(false)
-  const evaluations = reactive<Map<string, AIEvaluation>>(new Map())
-  const analyses = reactive<Map<string, PlanAnalysis>>(new Map())
-  const chatHistory = ref<ChatMessage[]>([])
+  const error = ref<string | null>(null)
+  
+  // AI角色相关状态
+  const availableRoles = ref<AIRole[]>([])
+  const currentRole = ref<AIRole | null>(null)
+  const userRoleRelationships = ref<Record<string, UserAIRelationship>>({})
+  const primaryMentor = ref<string>('life_mentor')
+  
+  // 对话相关状态
+  const activeConversations = ref<AIConversation[]>([])
+  const currentConversation = ref<AIConversation | null>(null)
+  const conversationHistory = ref<AIMessage[]>([])
+  const conversationStats = ref<ConversationStats | null>(null)
+  
+  // 人生轨迹相关状态
+  const userEvents = ref<LifeEvent[]>([])
+  const trajectoryOverview = ref<LifeTrajectoryOverview | null>(null)
+  
+  // 原有的评价和分析状态
+  const evaluations = reactive<Record<string, AIEvaluation>>({})
+  const planAnalyses = reactive<Record<string, PlanAnalysis>>({})
 
-  // 模拟API延迟
-  const simulateDelay = (ms: number = 1000) => new Promise(resolve => setTimeout(resolve, ms))
+  // API基础URL
+  const API_BASE = '/api/life-agent'
 
-  // 事件AI评价
-  const evaluateEvent = async (eventId: string, eventData: any): Promise<AIEvaluation> => {
-    isLoading.value = true
-    
+  // ==================== AI角色管理方法 ====================
+  
+  /**
+   * 获取所有可用的AI角色
+   */
+  const fetchAvailableRoles = async () => {
     try {
-      await simulateDelay(1500)
+      isLoading.value = true
+      const response = await fetch(`${API_BASE}/roles`)
+      if (!response.ok) throw new Error('获取AI角色失败')
       
+      const roles = await response.json()
+      availableRoles.value = roles
+      return roles
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '未知错误'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * 获取特定AI角色信息
+   */
+  const fetchRoleInfo = async (roleId: string) => {
+    try {
+      const response = await fetch(`${API_BASE}/roles/${roleId}`)
+      if (!response.ok) throw new Error('获取角色信息失败')
+      
+      const role = await response.json()
+      return role
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '未知错误'
+      throw err
+    }
+  }
+
+  /**
+   * 设置主要AI导师
+   */
+  const setPrimaryMentor = async (userId: number, roleId: string) => {
+    try {
+      isLoading.value = true
+      const response = await fetch(`${API_BASE}/users/${userId}/primary-mentor`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roleId })
+      })
+      
+      if (!response.ok) throw new Error('设置主要导师失败')
+      
+      primaryMentor.value = roleId
+      return await response.json()
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '未知错误'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * 获取用户与AI角色的关系
+   */
+  const fetchUserRoleRelationship = async (userId: number, roleId: string) => {
+    try {
+      const response = await fetch(`${API_BASE}/users/${userId}/roles/${roleId}/relationship`)
+      if (!response.ok) throw new Error('获取角色关系失败')
+      
+      const relationship = await response.json()
+      userRoleRelationships.value[roleId] = relationship
+      return relationship
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '未知错误'
+      throw err
+    }
+  }
+
+  // ==================== 对话管理方法 ====================
+
+  /**
+   * 开始新的对话会话
+   */
+  const startConversation = async (userId: number, roleId: string, conversationType: string) => {
+    try {
+      isLoading.value = true
+      const response = await fetch(`${API_BASE}/users/${userId}/conversations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roleId, conversationType })
+      })
+      
+      if (!response.ok) throw new Error('开始对话失败')
+      
+      const conversation = await response.json()
+      currentConversation.value = conversation
+      activeConversations.value.unshift(conversation)
+      
+      // 获取对话历史
+      await fetchConversationHistory(conversation.id)
+      
+      return conversation
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '未知错误'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * 基于人生事件开始对话
+   */
+  const startEventBasedConversation = async (userId: number, eventId: number) => {
+    try {
+      isLoading.value = true
+      const response = await fetch(`${API_BASE}/users/${userId}/events/${eventId}/start-conversation`, {
+        method: 'POST'
+      })
+      
+      if (!response.ok) throw new Error('开始事件对话失败')
+      
+      const conversation = await response.json()
+      currentConversation.value = conversation
+      activeConversations.value.unshift(conversation)
+      
+      // 获取对话历史
+      await fetchConversationHistory(conversation.id)
+      
+      return conversation
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '未知错误'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * 发送消息并获取AI回复
+   */
+  const sendMessage = async (conversationId: number, userId: number, message: string) => {
+    try {
+      isLoading.value = true
+      const response = await fetch(`${API_BASE}/conversations/${conversationId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, message })
+      })
+      
+      if (!response.ok) throw new Error('发送消息失败')
+      
+      const aiMessage = await response.json()
+      
+      // 更新对话历史
+      await fetchConversationHistory(conversationId)
+      
+      return aiMessage
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '未知错误'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * 获取对话历史
+   */
+  const fetchConversationHistory = async (conversationId: number, limit: number = 50) => {
+    try {
+      const response = await fetch(`${API_BASE}/conversations/${conversationId}/messages?limit=${limit}`)
+      if (!response.ok) throw new Error('获取对话历史失败')
+      
+      const messages = await response.json()
+      conversationHistory.value = messages
+      return messages
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '未知错误'
+      throw err
+    }
+  }
+
+  /**
+   * 切换AI角色
+   */
+  const switchRole = async (conversationId: number, newRoleId: string, reason: string) => {
+    try {
+      isLoading.value = true
+      const response = await fetch(`${API_BASE}/conversations/${conversationId}/switch-role`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newRoleId, reason })
+      })
+      
+      if (!response.ok) throw new Error('切换角色失败')
+      
+      const newConversation = await response.json()
+      currentConversation.value = newConversation
+      
+      // 更新活跃对话列表
+      const index = activeConversations.value.findIndex(c => c.id === conversationId)
+      if (index !== -1) {
+        activeConversations.value[index].status = 'completed'
+      }
+      activeConversations.value.unshift(newConversation)
+      
+      // 获取新对话的历史
+      await fetchConversationHistory(newConversation.id)
+      
+      return newConversation
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '未知错误'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * 获取用户的所有对话会话
+   */
+  const fetchUserConversations = async (userId: number) => {
+    try {
+      const response = await fetch(`${API_BASE}/users/${userId}/conversations`)
+      if (!response.ok) throw new Error('获取对话会话失败')
+      
+      const conversations = await response.json()
+      activeConversations.value = conversations
+      return conversations
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '未知错误'
+      throw err
+    }
+  }
+
+  // ==================== 人生事件管理方法 ====================
+
+  /**
+   * 添加人生事件
+   */
+  const addLifeEvent = async (userId: number, eventData: Partial<LifeEvent>) => {
+    try {
+      isLoading.value = true
+      const response = await fetch(`${API_BASE}/users/${userId}/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(eventData)
+      })
+      
+      if (!response.ok) throw new Error('添加人生事件失败')
+      
+      const event = await response.json()
+      userEvents.value.unshift(event)
+      
+      // 刷新轨迹概览
+      await fetchTrajectoryOverview(userId)
+      
+      return event
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '未知错误'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * 获取人生轨迹概览
+   */
+  const fetchTrajectoryOverview = async (userId: number) => {
+    try {
+      const response = await fetch(`${API_BASE}/users/${userId}/trajectory-overview`)
+      if (!response.ok) throw new Error('获取轨迹概览失败')
+      
+      const overview = await response.json()
+      trajectoryOverview.value = overview
+      return overview
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '未知错误'
+      throw err
+    }
+  }
+
+  /**
+   * 获取用户的所有人生事件
+   */
+  const fetchUserEvents = async (userId: number) => {
+    try {
+      const response = await fetch(`${API_BASE}/users/${userId}/events`)
+      if (!response.ok) throw new Error('获取人生事件失败')
+      
+      const events = await response.json()
+      userEvents.value = events
+      return events
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '未知错误'
+      throw err
+    }
+  }
+
+  /**
+   * 为事件推荐AI角色
+   */
+  const recommendRolesForEvent = async (event: LifeEvent) => {
+    try {
+      const response = await fetch(`${API_BASE}/events/recommend-roles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(event)
+      })
+      
+      if (!response.ok) throw new Error('推荐角色失败')
+      
+      return await response.json()
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '未知错误'
+      throw err
+    }
+  }
+
+  // ==================== 统计和分析方法 ====================
+
+  /**
+   * 获取对话统计信息
+   */
+  const fetchConversationStats = async (userId: number) => {
+    try {
+      const response = await fetch(`${API_BASE}/users/${userId}/conversation-stats`)
+      if (!response.ok) throw new Error('获取对话统计失败')
+      
+      const stats = await response.json()
+      conversationStats.value = stats
+      return stats
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '未知错误'
+      throw err
+    }
+  }
+
+  /**
+   * 获取综合分析报告
+   */
+  const fetchComprehensiveAnalysis = async (userId: number) => {
+    try {
+      isLoading.value = true
+      const response = await fetch(`${API_BASE}/users/${userId}/comprehensive-analysis`)
+      if (!response.ok) throw new Error('获取综合分析失败')
+      
+      const analysis = await response.json()
+      
+      // 更新相关状态
+      trajectoryOverview.value = analysis.trajectoryOverview
+      conversationStats.value = analysis.conversationStats
+      primaryMentor.value = analysis.primaryMentor
+      
+      return analysis
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '未知错误'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // ==================== 原有的评价和分析方法 ====================
+
+  /**
+   * 评价人生事件
+   */
+  const evaluateEvent = async (eventId: string, eventData: any): Promise<AIEvaluation> => {
+    try {
+      isLoading.value = true
+      error.value = null
+
+      // 模拟API调用延迟
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
       const evaluation: AIEvaluation = {
         eventId,
         evaluationId: `eval_${Date.now()}`,
         timestamp: new Date().toISOString(),
         status: 'completed',
         analysis: {
-          overallScore: 8.5,
-          emotionalImpact: '积极',
-          growthPotential: '高',
-          lifeSignificance: '重要'
+          overallScore: Math.floor(Math.random() * 3) + 7,
+          emotionalImpact: '这个事件对您的情感状态产生了积极的影响，增强了您的自信心和成就感。',
+          growthPotential: '通过这次经历，您在专业技能和人际交往方面都有显著提升的空间。',
+          lifeSignificance: '这是您人生轨迹中的一个重要节点，为未来的发展奠定了坚实基础。'
         },
         insights: {
-          strengths: [
-            '展现了出色的领导能力和团队协作精神',
-            '在压力下保持冷静，体现了良好的心理素质',
-            '通过这次经历获得了宝贵的实践经验'
-          ],
-          improvements: [
-            '可以进一步提升沟通技巧，更好地表达想法',
-            '建议在类似场合中更加主动地承担责任',
-            '考虑将这次经验应用到其他领域'
-          ],
-          futureOpportunities: [
-            '这次成功为未来的职业发展奠定了基础',
-            '可以考虑在相关领域寻求更多挑战',
-            '建议分享经验，帮助他人成长'
-          ]
+          strengths: ['展现了出色的学习能力', '在压力下保持冷静', '善于团队协作'],
+          improvements: ['可以更主动地寻求反馈', '时间管理还有提升空间', '可以培养更多的创新思维'],
+          futureOpportunities: ['考虑承担更多领导责任', '探索跨领域合作机会', '建立个人品牌影响力']
         },
         recommendations: {
-          immediate: [
-            '记录下这次经历的关键学习点',
-            '与团队成员保持联系，维护良好关系',
-            '准备在简历中突出这次成就'
-          ],
-          shortTerm: [
-            '寻找类似的项目或机会来巩固技能',
-            '考虑获得相关的专业认证',
-            '建立个人品牌和专业网络'
-          ],
-          longTerm: [
-            '制定职业发展规划，明确下一步目标',
-            '考虑在这个领域深入发展或转向管理角色',
-            '思考如何将这次经验转化为长期优势'
-          ]
+          immediate: ['记录这次成功的关键因素', '向团队成员表达感谢', '制定下一阶段目标'],
+          shortTerm: ['寻找导师进行深度交流', '参加相关技能培训', '扩展专业网络'],
+          longTerm: ['考虑职业发展新方向', '建立个人知识体系', '培养行业影响力']
         }
       }
-      
-      evaluations.set(eventId, evaluation)
+
+      evaluations[eventId] = evaluation
       return evaluation
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '评价失败'
+      throw err
     } finally {
       isLoading.value = false
     }
   }
 
-  // 获取事件评价
-  const getEventEvaluation = (eventId: string): AIEvaluation | null => {
-    return evaluations.get(eventId) || null
-  }
-
-  // 虚拟人生规划AI分析
+  /**
+   * 分析人生规划
+   */
   const analyzePlan = async (planId: string, planData: any): Promise<PlanAnalysis> => {
-    isLoading.value = true
-    
     try {
-      await simulateDelay(2000)
-      
+      isLoading.value = true
+      error.value = null
+
+      // 模拟API调用延迟
+      await new Promise(resolve => setTimeout(resolve, 2500))
+
       const analysis: PlanAnalysis = {
         planId,
         analysisId: `analysis_${Date.now()}`,
         timestamp: new Date().toISOString(),
         status: 'completed',
         feasibility: {
-          overallScore: 7.8,
-          timeRealistic: 8.0,
-          resourceAvailability: 7.5,
-          skillRequirement: 8.2,
-          marketOpportunity: 7.6
+          overallScore: Math.floor(Math.random() * 2) + 7,
+          timeRealistic: Math.floor(Math.random() * 3) + 7,
+          resourceAvailability: Math.floor(Math.random() * 3) + 6,
+          skillRequirement: Math.floor(Math.random() * 3) + 7,
+          marketOpportunity: Math.floor(Math.random() * 3) + 8
         },
         riskAssessment: {
-          level: '中等',
-          mainRisks: [
-            '市场竞争激烈，需要差异化策略',
-            '技能提升需要时间投入，可能影响短期收入',
-            '行业变化快速，需要持续学习适应'
-          ],
-          mitigationStrategies: [
-            '制定详细的学习计划，分阶段提升技能',
-            '建立多元化的收入来源，降低风险',
-            '保持行业敏感度，及时调整策略'
-          ]
+          level: 'medium',
+          mainRisks: ['市场竞争激烈', '技术更新换代快', '资源投入较大'],
+          mitigationStrategies: ['建立差异化优势', '持续学习新技术', '分阶段投入资源']
         },
         optimization: {
-          priorityAdjustments: [
-            '优先发展核心技能，建立竞争优势',
-            '加强网络建设，扩大专业影响力',
-            '考虑与现有经验结合，创造独特价值'
-          ],
-          timelineOptimization: [
-            '将长期目标分解为可执行的短期里程碑',
-            '预留缓冲时间应对不可预见的挑战',
-            '设置定期评估点，及时调整计划'
-          ],
-          resourceOptimization: [
-            '充分利用现有资源和人脉关系',
-            '寻找成本效益最高的学习和发展途径',
-            '考虑合作伙伴关系，共享资源和风险'
-          ]
+          priorityAdjustments: ['优先完成核心技能培养', '提前建立行业人脉', '制定备选方案'],
+          timelineOptimization: ['将长期目标分解为季度里程碑', '预留缓冲时间应对变化', '设置定期评估节点'],
+          resourceOptimization: ['利用在线学习平台降低成本', '寻找合作伙伴共享资源', '申请相关资助或奖学金']
         }
       }
-      
-      analyses.set(planId, analysis)
+
+      planAnalyses[planId] = analysis
       return analysis
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '分析失败'
+      throw err
     } finally {
       isLoading.value = false
     }
   }
 
-  // 获取规划分析
-  const getPlanAnalysis = (planId: string): PlanAnalysis | null => {
-    return analyses.get(planId) || null
+  // ==================== 工具方法 ====================
+
+  /**
+   * 清除错误状态
+   */
+  const clearError = () => {
+    error.value = null
   }
 
-  // AI对话
-  const sendMessage = async (message: string, context?: { eventId?: string, planId?: string }): Promise<ChatMessage> => {
-    isLoading.value = true
-    
-    // 添加用户消息
-    const userMessage: ChatMessage = {
-      messageId: `msg_${Date.now()}_user`,
-      timestamp: new Date().toISOString(),
-      type: 'user',
-      message,
-      ...context
-    }
-    chatHistory.value.push(userMessage)
-    
-    try {
-      await simulateDelay(1000)
-      
-      // 生成AI响应
-      const aiResponse = generateAIResponse(message, context)
-      const aiMessage: ChatMessage = {
-        messageId: `msg_${Date.now()}_ai`,
-        timestamp: new Date().toISOString(),
-        type: 'ai',
-        message: aiResponse.message,
-        suggestions: aiResponse.suggestions,
-        ...context
-      }
-      
-      chatHistory.value.push(aiMessage)
-      return aiMessage
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  // 生成AI响应
-  const generateAIResponse = (userMessage: string, context?: { eventId?: string, planId?: string }) => {
-    if (context?.eventId) {
-      return generateEventChatResponse(userMessage, context.eventId)
-    } else if (context?.planId) {
-      return generatePlanChatResponse(userMessage, context.planId)
-    } else {
-      return generateGeneralChatResponse(userMessage)
-    }
-  }
-
-  // 事件相关对话响应
-  const generateEventChatResponse = (userMessage: string, eventId: string) => {
-    if (userMessage.includes('影响') || userMessage.includes('意义')) {
-      return {
-        message: '这个事件对您的人生具有重要意义。从长远来看，它不仅提升了您的专业能力，更重要的是培养了您面对挑战的勇气和解决问题的思维方式。这种经历会成为您未来职业发展的重要资产，建议您将其中的关键学习点记录下来，并思考如何在未来的工作中应用这些经验。',
-        suggestions: [
-          '您想了解这个事件对职业发展的具体影响吗？',
-          '我可以帮您分析如何将这次经验转化为竞争优势',
-          '要不要探讨一下类似经历的最佳实践？'
-        ]
-      }
-    } else if (userMessage.includes('建议') || userMessage.includes('下一步')) {
-      return {
-        message: '基于这次经历，我建议您：1）总结并记录这次成功的关键因素；2）主动寻找类似的挑战机会来巩固和发展这些技能；3）与参与这次事件的同事保持良好关系，他们可能成为您未来的重要人脉；4）考虑将这次经验写入您的职业档案，为未来的机会做准备。您觉得哪个方面最需要优先关注？',
-        suggestions: [
-          '我想了解如何记录和总结这次经历',
-          '如何寻找类似的挑战机会？',
-          '怎样维护和发展职业人脉关系？'
-        ]
-      }
-    } else if (userMessage.includes('感受') || userMessage.includes('情感')) {
-      return {
-        message: '从您的描述中，我能感受到这次经历带给您的成就感和自信心的提升。这种积极的情感体验非常宝贵，它不仅证明了您的能力，也为您未来面对类似挑战提供了心理支撑。建议您在感到压力或怀疑时，回想这次成功的经历，它会成为您前进的动力源泉。',
-        suggestions: [
-          '如何保持和延续这种积极的心态？',
-          '怎样将成功经验转化为自信心？',
-          '面对未来挑战时如何调节心理状态？'
-        ]
-      }
-    } else {
-      return {
-        message: '我理解您对这个事件的关注。这确实是一次很有价值的经历，展现了您的潜力和成长空间。如果您想深入探讨某个特定方面，比如这次经历对您技能发展的影响，或者如何将学到的经验应用到未来的挑战中，我很乐意为您提供更详细的分析和建议。',
-        suggestions: [
-          '这次经历对我的技能发展有什么影响？',
-          '如何将经验应用到未来的挑战中？',
-          '我想了解更多关于个人成长的建议'
-        ]
-      }
-    }
-  }
-
-  // 规划相关对话响应
-  const generatePlanChatResponse = (userMessage: string, planId: string) => {
-    if (userMessage.includes('可行性') || userMessage.includes('实现')) {
-      return {
-        message: '从可行性角度来看，您的规划具有很好的基础。关键在于合理的时间安排和资源配置。我建议将大目标分解为具体的里程碑，每个阶段都设定明确的成功标准。同时，要为不可预见的挑战预留缓冲时间。您目前最担心的是哪个方面的可行性？',
-        suggestions: [
-          '如何制定详细的时间安排？',
-          '怎样合理配置和利用资源？',
-          '如何设定阶段性的成功标准？'
-        ]
-      }
-    } else if (userMessage.includes('风险') || userMessage.includes('挑战')) {
-      return {
-        message: '任何有价值的规划都会面临一定的风险和挑战，这是正常的。主要风险包括市场变化、技能差距和时间压力。但这些都是可以通过合理的策略来管理的。比如，保持学习的敏捷性、建立多元化的技能组合、制定备选方案等。您觉得哪个风险对您来说最需要重点关注？',
-        suggestions: [
-          '如何应对市场变化的风险？',
-          '怎样快速弥补技能差距？',
-          '如何制定有效的备选方案？'
-        ]
-      }
-    } else if (userMessage.includes('优化') || userMessage.includes('改进')) {
-      return {
-        message: '优化规划是一个持续的过程。基于当前分析，我建议从三个方面进行优化：1）时间线优化 - 确保各阶段的时间安排合理且有弹性；2）资源优化 - 最大化利用现有资源，寻找成本效益最高的发展路径；3）策略优化 - 根据市场反馈和个人进展及时调整策略。您希望我详细解释哪个方面的优化建议？',
-        suggestions: [
-          '详细了解时间线优化策略',
-          '如何进行资源优化配置？',
-          '策略优化的具体方法是什么？'
-        ]
-      }
-    } else {
-      return {
-        message: '您的规划展现了清晰的思路和积极的态度。成功的关键在于坚持执行和灵活调整。我建议您定期回顾和评估进展，及时识别需要调整的地方。同时，保持开放的心态，从每个阶段的经历中学习和成长。有什么具体的执行细节您想要深入讨论的吗？',
-        suggestions: [
-          '如何制定有效的执行计划？',
-          '怎样进行定期回顾和评估？',
-          '如何保持执行过程中的动力？'
-        ]
-      }
-    }
-  }
-
-  // 通用对话响应
-  const generateGeneralChatResponse = (userMessage: string) => {
-    if (userMessage.includes('规划') || userMessage.includes('计划')) {
-      return {
-        message: '制定人生规划是一个非常有意义的过程。好的规划应该结合您的兴趣、能力、价值观和外部机会。我可以帮您从目标设定、现状分析、路径规划和风险评估等方面来思考。您希望从哪个方面开始讨论？',
-        suggestions: [
-          '如何进行有效的目标设定？',
-          '怎样分析当前的现状和资源？',
-          '如何制定可行的路径规划？'
-        ]
-      }
-    } else if (userMessage.includes('评价') || userMessage.includes('分析')) {
-      return {
-        message: '我很乐意帮您进行分析和评价。为了提供更准确的建议，我需要了解更多背景信息。您是希望我评价某个具体的人生事件，还是分析某个规划的可行性？或者您有其他特定的分析需求？',
-        suggestions: [
-          '我想评价一个重要的人生事件',
-          '我需要分析一个虚拟人生规划',
-          '我想了解个人发展的建议'
-        ]
-      }
-    } else if (userMessage.includes('你好') || userMessage.toLowerCase().includes('hello')) {
-      return {
-        message: '您好！我是您的人生智能助手，专门帮助您分析人生事件、制定规划和提供个性化建议。我可以帮您：1）评价和分析人生事件的意义和影响；2）分析虚拟人生规划的可行性；3）提供个性化的发展建议；4）进行深度的人生话题讨论。有什么我可以帮助您的吗？',
-        suggestions: [
-          '我想分析一个重要的人生事件',
-          '我需要制定一个人生规划',
-          '我想了解个人发展的建议'
-        ]
-      }
-    } else {
-      return {
-        message: '我理解您的想法。作为您的人生智能助手，我致力于为您提供有价值的洞察和建议。无论是分析过去的经历、规划未来的发展，还是解决当前的困惑，我都会尽力帮助您。请告诉我您最关心的问题，我们可以深入探讨。',
-        suggestions: [
-          '我想讨论职业发展问题',
-          '我需要人生规划的建议',
-          '我想了解如何提升个人能力'
-        ]
-      }
-    }
-  }
-
-  // 清空对话历史
-  const clearChatHistory = () => {
-    chatHistory.value = []
-  }
-
-  // 获取对话历史
-  const getChatHistory = (context?: { eventId?: string, planId?: string }) => {
-    if (!context) return chatHistory.value
-    
-    return chatHistory.value.filter(msg => {
-      if (context.eventId) return msg.eventId === context.eventId
-      if (context.planId) return msg.planId === context.planId
-      return false
-    })
+  /**
+   * 重置所有状态
+   */
+  const resetState = () => {
+    isLoading.value = false
+    error.value = null
+    currentRole.value = null
+    currentConversation.value = null
+    conversationHistory.value = []
+    Object.keys(evaluations).forEach(key => delete evaluations[key])
+    Object.keys(planAnalyses).forEach(key => delete planAnalyses[key])
   }
 
   return {
-    isConnected,
+    // 状态
     isLoading,
+    error,
+    availableRoles,
+    currentRole,
+    userRoleRelationships,
+    primaryMentor,
+    activeConversations,
+    currentConversation,
+    conversationHistory,
+    conversationStats,
+    userEvents,
+    trajectoryOverview,
     evaluations,
-    analyses,
-    chatHistory,
-    evaluateEvent,
-    getEventEvaluation,
-    analyzePlan,
-    getPlanAnalysis,
+    planAnalyses,
+
+    // AI角色管理方法
+    fetchAvailableRoles,
+    fetchRoleInfo,
+    setPrimaryMentor,
+    fetchUserRoleRelationship,
+
+    // 对话管理方法
+    startConversation,
+    startEventBasedConversation,
     sendMessage,
-    clearChatHistory,
-    getChatHistory
+    fetchConversationHistory,
+    switchRole,
+    fetchUserConversations,
+
+    // 人生事件管理方法
+    addLifeEvent,
+    fetchTrajectoryOverview,
+    fetchUserEvents,
+    recommendRolesForEvent,
+
+    // 统计和分析方法
+    fetchConversationStats,
+    fetchComprehensiveAnalysis,
+
+    // 原有方法
+    evaluateEvent,
+    analyzePlan,
+    
+    // Getter方法
+    getEventEvaluation: (eventId: string) => evaluations[eventId],
+    getPlanAnalysis: (planId: string) => planAnalyses[planId],
+    getChatHistory: (context: any) => conversationHistory.value,
+
+    // 工具方法
+    clearError,
+    resetState
   }
 })
 

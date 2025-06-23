@@ -45,9 +45,10 @@ dual-track-life-main/
 │   │   └── router/         # 路由配置
 │   ├── dist/               # 构建输出
 │   └── package.json
-├── life-agent-backend/      # Life Agent后端服务
+├── backend/                 # Spring Boot后端服务
 │   ├── src/main/java/      # Java源码
 │   ├── src/main/resources/ # 配置文件
+│   ├── start-backend.sh    # 启动脚本
 │   └── pom.xml
 └── README.md
 ```
@@ -96,7 +97,9 @@ npm run dev
 
 ### 后端开发
 ```bash
-cd life-agent-backend
+cd backend
+./start-backend.sh
+# 或者
 mvn spring-boot:run
 ```
 
@@ -111,9 +114,9 @@ npm run build
 
 ### 后端部署
 ```bash
-cd life-agent-backend
+cd backend
 mvn clean package
-java -jar target/life-agent-simple-1.0.0.jar
+java -jar target/backend-1.0.0.jar
 ```
 
 ## 🔧 环境要求

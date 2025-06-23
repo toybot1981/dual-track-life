@@ -144,6 +144,7 @@ export default {
     quickActions: {
       title: 'Quick Actions',
       addEvent: 'Add Life Event',
+      aiRoles: 'AI Role Management',
       virtualSimulation: 'Virtual Life Simulation',
       viewAnalytics: 'View Analytics',
       parallelUniverses: 'Parallel Universes',

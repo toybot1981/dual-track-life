@@ -149,6 +149,14 @@
         </button>
         
         <button
+          @click="showAIRoleManager = true"
+          class="bg-gradient-to-r from-green-600 to-teal-600 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-teal-700 transition-all duration-200 shadow-lg flex items-center space-x-2"
+        >
+          <Brain class="w-5 h-5" />
+          <span>{{ $t('dashboard.quickActions.aiRoles') }}</span>
+        </button>
+        
+        <button
           @click="showSimulationModal = true"
           class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg flex items-center space-x-2"
         >
@@ -427,6 +435,23 @@
       :plan="analyzingPlan"
       @close="closePlanAIAnalysis"
     />
+
+    <!-- AI Role Manager Modal -->
+    <div v-if="showAIRoleManager" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] m-4 overflow-hidden">
+        <div class="flex justify-between items-center p-6 border-b border-gray-200">
+          <h2 class="text-2xl font-bold text-gray-900">{{ $t('aiRoles.title') }}</h2>
+          <button @click="showAIRoleManager = false" class="text-gray-500 hover:text-gray-700">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="h-full overflow-auto">
+          <AIRoleManager />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -444,6 +469,7 @@ import AILifeCoach from '@/components/AILifeCoach.vue'
 import LifeAgentChat from '@/components/LifeAgentChat.vue'
 import EventAIEvaluation from '@/components/EventAIEvaluation.vue'
 import PlanAIAnalysis from '@/components/PlanAIAnalysis.vue'
+import AIRoleManager from '@/components/AIRoleManager.vue'
 import {
   Calendar,
   Plus,
@@ -475,6 +501,7 @@ const showParallelUniverseModal = ref(false)
 const showLifeAgentModal = ref(false)
 const showEventAIEvaluation = ref(false)
 const showPlanAIAnalysis = ref(false)
+const showAIRoleManager = ref(false)
 const editingEvent = ref<Event | null>(null)
 const triggeringEvent = ref<Event | null>(null)
 const evaluatingEvent = ref<Event | null>(null)

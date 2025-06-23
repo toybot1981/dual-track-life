@@ -216,7 +216,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useAIStore } from '@/stores/aiService'
+import { useAIServiceStore } from '@/stores/aiService'
 
 import type { Event } from '@/stores/events'
 
@@ -229,7 +229,7 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const aiStore = useAIStore()
+const aiStore = useAIServiceStore()
 const chatInput = ref('')
 
 const evaluation = computed(() => aiStore.getEventEvaluation(props.event.id?.toString() || ''))
@@ -251,14 +251,22 @@ const startEvaluation = async () => {
 const sendMessage = async () => {
   if (!chatInput.value.trim()) return
   
-  const message = chatInput.value
+  const message = chatInput.value.trim()
   chatInput.value = ''
   
-  await aiStore.sendMessage(message, { eventId: props.event.id?.toString() || '' })
+  // 需要先获取或创建对话ID
+  const conversationId = 1 // 临时使用固定ID，实际应该从当前对话获取
+  const userId = 1 // 临时用户ID
+  
+  await aiStore.sendMessage(conversationId, userId, message)
 }
 
 const sendSuggestion = async (suggestion: string) => {
-  await aiStore.sendMessage(suggestion, { eventId: props.event.id?.toString() || '' })
+  // 需要先获取或创建对话ID
+  const conversationId = 1 // 临时使用固定ID
+  const userId = 1 // 临时用户ID
+  
+  await aiStore.sendMessage(conversationId, userId, suggestion)
 }
 
 onMounted(() => {

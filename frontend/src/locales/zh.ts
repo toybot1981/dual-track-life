@@ -148,6 +148,7 @@ export default {
     quickActions: {
       title: '快速操作',
       addEvent: '添加人生事件',
+      aiRoles: 'AI角色管理',
       virtualSimulation: '虚拟人生模拟',
       viewAnalytics: '查看分析',
       parallelUniverses: '平行宇宙',

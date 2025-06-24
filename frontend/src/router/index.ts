@@ -10,6 +10,7 @@ import RegisterView from '@/views/RegisterView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import TimelineView from '@/views/TimelineView.vue'
 import MemoryRecorderView from '@/views/MemoryRecorderView.vue'
+import LifeAgentPageView from '@/views/LifeAgentPageView.vue'
 
 const routes = [
   // 语言选择页面
@@ -56,6 +57,12 @@ const routes = [
     component: MemoryRecorderView,
     meta: { requiresAuth: true, locale: 'en' }
   },
+  {
+    path: '/life-agent',
+    name: 'LifeAgent',
+    component: LifeAgentPageView,
+    meta: { requiresAuth: true, locale: 'en' }
+  },
   
   // 中文路由
   {
@@ -92,6 +99,12 @@ const routes = [
     path: '/cn/memories',
     name: 'MemoryRecorderCN',
     component: MemoryRecorderView,
+    meta: { requiresAuth: true, locale: 'zh' }
+  },
+  {
+    path: '/cn/life-agent',
+    name: 'LifeAgentCN',
+    component: LifeAgentPageView,
     meta: { requiresAuth: true, locale: 'zh' }
   },
   

@@ -127,11 +127,6 @@ watch(() => lifeAgentStore.messages.length, () => {
 
 onMounted(async () => {
   await lifeAgentStore.initializeAgent()
-  
-  // 发送欢迎消息
-  if (lifeAgentStore.messages.length === 0) {
-    await lifeAgentStore.sendMessage('你好')
-  }
 })
 </script>
 
@@ -139,9 +134,7 @@ onMounted(async () => {
 .life-agent-chat {
   display: flex;
   flex-direction: column;
-  height: 600px;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
+  height: 100%;
   background: white;
   overflow: hidden;
 }

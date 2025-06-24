@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import AIService from '@/services/aiService'
 
 export interface LifeAgentMessage {
   id: string
@@ -37,10 +38,8 @@ export const useLifeAgentStore = defineStore('lifeAgent', () => {
   const messages = ref<LifeAgentMessage[]>([])
   const plans = ref<LifeAgentPlan[]>([])
   const evaluations = ref<LifeAgentEvaluation[]>([])
-  const currentUserId = ref('user_' + Date.now())
-  
-  // Life Agent API 基础URL
-  const API_BASE_URL = 'https://8080-ila6aaotdfwudti5rzegi-cb0adbf3.manusvm.computer/api'
+  const currentUserId = ref('demo_user')
+  const currentRoleId = ref('life_mentor') // 默认使用人生导师角色
   
   // 计算属性
   const latestPlan = computed(() => {
@@ -51,173 +50,168 @@ export const useLifeAgentStore = defineStore('lifeAgent', () => {
     return evaluations.value.length > 0 ? evaluations.value[evaluations.value.length - 1] : null
   })
   
-  const conversationHistory = computed(() => {
-    return messages.value.slice(-10) // 最近10条消息
-  })
-  
-  // 方法
-  const checkHealth = async () => {
+  // 初始化Agent
+  const initializeAgent = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/health`)
-      const data = await response.json()
-      isConnected.value = data.status === 'UP'
-      return data
+      // 检查后端健康状态
+      await AIService.healthCheck()
+      isConnected.value = true
     } catch (error) {
-      console.error('Life Agent健康检查失败:', error)
+      console.error('初始化Life Agent失败:', error)
       isConnected.value = false
-      throw error
+    }
+    
+    // 无论健康检查是否成功，都添加欢迎消息
+    if (messages.value.length === 0) {
+      const welcomeMessage: LifeAgentMessage = {
+        id: generateMessageId(),
+        userId: currentUserId.value,
+        message: '您好！我是您的AI生活助手，很高兴为您服务。我可以帮助您进行人生规划、目标分析和生活评估。请告诉我您想要聊什么？',
+        type: 'agent',
+        category: 'general',
+        timestamp: Date.now()
+      }
+      messages.value.push(welcomeMessage)
     }
   }
   
-  const sendMessage = async (message: string, type: string = 'general') => {
-    isLoading.value = true
+  // 发送消息
+  const sendMessage = async (messageText: string, category: string = 'general') => {
+    if (!messageText.trim() || isLoading.value) return
     
     // 添加用户消息
     const userMessage: LifeAgentMessage = {
-      id: 'msg_' + Date.now(),
+      id: generateMessageId(),
       userId: currentUserId.value,
-      message,
+      message: messageText,
       type: 'user',
+      category: category as any,
       timestamp: Date.now()
     }
     messages.value.push(userMessage)
     
+    isLoading.value = true
+    
     try {
-      const response = await fetch(`${API_BASE_URL}/life-agent/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: currentUserId.value,
-          message,
-          type
-        })
+      // 调用AI服务
+      const response = await AIService.roleBasedChat({
+        roleId: currentRoleId.value,
+        query: messageText,
+        context: getConversationContext()
       })
-      
-      const data = await response.json()
       
       // 添加AI回复
       const agentMessage: LifeAgentMessage = {
-        id: 'msg_' + Date.now() + '_agent',
+        id: generateMessageId(),
         userId: currentUserId.value,
-        message: data.message,
+        message: response.response,
         type: 'agent',
-        category: data.category,
-        timestamp: data.timestamp
+        category: category as any,
+        timestamp: Date.now()
       }
       messages.value.push(agentMessage)
       
-      return data
     } catch (error) {
       console.error('发送消息失败:', error)
-      throw error
-    } finally {
-      isLoading.value = false
-    }
-  }
-  
-  const generatePlanning = async (planType: string = '综合规划', requirements: string = '') => {
-    isLoading.value = true
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/life-agent/planning`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: currentUserId.value,
-          planType,
-          requirements
-        })
-      })
       
-      const data = await response.json()
-      
-      // 保存规划
-      const plan: LifeAgentPlan = {
-        planId: data.planId,
-        userId: data.userId,
-        planType: data.planType,
-        title: data.title,
-        content: data.content,
-        status: data.status,
-        createdDate: data.createdDate
+      // 添加错误消息
+      const errorMessage: LifeAgentMessage = {
+        id: generateMessageId(),
+        userId: currentUserId.value,
+        message: '抱歉，我现在无法回复您的消息。请稍后再试。',
+        type: 'agent',
+        category: 'general',
+        timestamp: Date.now()
       }
-      plans.value.push(plan)
-      
-      return data
-    } catch (error) {
-      console.error('生成规划失败:', error)
-      throw error
+      messages.value.push(errorMessage)
     } finally {
       isLoading.value = false
     }
   }
   
-  const performEvaluation = async (evaluationType: string = 'comprehensive') => {
-    isLoading.value = true
+  // 切换AI角色
+  const switchRole = (roleId: string) => {
+    currentRoleId.value = roleId
     
-    try {
-      const response = await fetch(`${API_BASE_URL}/life-agent/evaluation`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: currentUserId.value,
-          evaluationType
-        })
-      })
-      
-      const data = await response.json()
-      
-      // 保存评价
-      const evaluation: LifeAgentEvaluation = {
-        evaluationId: data.evaluationId,
-        userId: data.userId,
-        evaluationType: data.evaluationType,
-        overallScore: data.overallScore,
-        analysis: data.analysis,
-        recommendations: data.recommendations,
-        timestamp: data.timestamp
-      }
-      evaluations.value.push(evaluation)
-      
-      return data
-    } catch (error) {
-      console.error('执行评价失败:', error)
-      throw error
-    } finally {
-      isLoading.value = false
+    // 添加角色切换提示消息
+    const switchMessage: LifeAgentMessage = {
+      id: generateMessageId(),
+      userId: currentUserId.value,
+      message: `已切换到${getRoleName(roleId)}模式，我将以这个角色为您提供服务。`,
+      type: 'agent',
+      category: 'general',
+      timestamp: Date.now()
     }
+    messages.value.push(switchMessage)
   }
   
-  const getUserProfile = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/life-agent/user/${currentUserId.value}/profile`)
-      const data = await response.json()
-      return data
-    } catch (error) {
-      console.error('获取用户档案失败:', error)
-      throw error
-    }
+  // 获取对话上下文
+  const getConversationContext = () => {
+    const recentMessages = messages.value.slice(-5) // 获取最近5条消息作为上下文
+    return recentMessages.map(msg => `${msg.type}: ${msg.message}`).join('\n')
   }
   
-  const clearHistory = () => {
+  // 生成消息ID
+  const generateMessageId = () => {
+    return 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+  }
+  
+  // 获取角色名称
+  const getRoleName = (roleId: string) => {
+    const roleNames: Record<string, string> = {
+      'life_mentor': '人生导师',
+      'psychologist': '心理咨询师',
+      'career_coach': '职业导师',
+      'life_coach': '生活教练',
+      'philosopher': '哲学家'
+    }
+    return roleNames[roleId] || '智能助手'
+  }
+  
+  // 创建人生规划
+  const createPlan = async (planType: string, title: string, content: string) => {
+    const plan: LifeAgentPlan = {
+      planId: 'plan_' + Date.now(),
+      userId: currentUserId.value,
+      planType,
+      title,
+      content,
+      status: 'draft',
+      createdDate: Date.now()
+    }
+    
+    plans.value.push(plan)
+    return plan
+  }
+  
+  // 创建评估
+  const createEvaluation = async (evaluationType: string, analysis: string, score: number, recommendations: string[]) => {
+    const evaluation: LifeAgentEvaluation = {
+      evaluationId: 'eval_' + Date.now(),
+      userId: currentUserId.value,
+      evaluationType,
+      overallScore: score,
+      analysis,
+      recommendations,
+      timestamp: Date.now()
+    }
+    
+    evaluations.value.push(evaluation)
+    return evaluation
+  }
+  
+  // 清空对话
+  const clearMessages = () => {
+    messages.value = []
+  }
+  
+  // 重置所有数据
+  const resetAll = () => {
     messages.value = []
     plans.value = []
     evaluations.value = []
-  }
-  
-  const initializeAgent = async () => {
-    try {
-      await checkHealth()
-      console.log('Life Agent初始化成功')
-    } catch (error) {
-      console.error('Life Agent初始化失败:', error)
-    }
+    isConnected.value = false
+    isLoading.value = false
   }
   
   return {
@@ -228,20 +222,20 @@ export const useLifeAgentStore = defineStore('lifeAgent', () => {
     plans,
     evaluations,
     currentUserId,
+    currentRoleId,
     
     // 计算属性
     latestPlan,
     latestEvaluation,
-    conversationHistory,
     
     // 方法
-    checkHealth,
+    initializeAgent,
     sendMessage,
-    generatePlanning,
-    performEvaluation,
-    getUserProfile,
-    clearHistory,
-    initializeAgent
+    switchRole,
+    createPlan,
+    createEvaluation,
+    clearMessages,
+    resetAll
   }
 })
 

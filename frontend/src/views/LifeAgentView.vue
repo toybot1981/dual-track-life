@@ -361,12 +361,12 @@ const handleEventAnalysis = async (data: any) => {
   showEventAnalysis.value = false
   
   try {
-    const response = await AIService.eventAnalysis(
-      data.eventTitle,
-      data.eventDescription,
-      data.eventType,
-      data.userQuery
-    )
+    const response = await AIService.eventAnalysis({
+      eventTitle: data.eventTitle,
+      eventDescription: data.eventDescription,
+      eventType: data.eventType,
+      userQuery: data.userQuery
+    })
     
     resultTitle.value = '事件分析结果'
     resultContent.value = response.analysis || response.response
@@ -387,11 +387,10 @@ const handleTrajectoryAnalysis = async (data: any) => {
   showTrajectoryAnalysis.value = false
   
   try {
-    const response = await AIService.trajectoryAnalysis(
-      data.currentSituation,
-      data.goals,
-      data.timeFrame
-    )
+    const response = await AIService.trajectoryAnalysis({
+      userEvents: data.currentSituation,
+      analysisType: data.timeFrame
+    })
     
     resultTitle.value = '轨迹分析结果'
     resultContent.value = response.analysis || response.response
@@ -411,11 +410,11 @@ const handlePersonalizedAdvice = async (data: any) => {
   showPersonalizedAdvice.value = false
   
   try {
-    const response = await AIService.personalizedAdvice(
-      data.userProfile,
-      data.currentSituation,
-      data.goals
-    )
+    const response = await AIService.personalizedAdvice({
+      userProfile: data.userProfile,
+      currentSituation: data.currentSituation,
+      goals: data.goals
+    })
     
     resultTitle.value = '个性化建议'
     resultContent.value = response.advice || response.response
@@ -435,11 +434,11 @@ const handleEmotionalSupport = async (data: any) => {
   showEmotionalSupport.value = false
   
   try {
-    const response = await AIService.emotionalSupport(
-      data.emotionalState,
-      data.situation,
-      data.userMessage
-    )
+    const response = await AIService.emotionalSupport({
+      emotionalState: data.emotionalState,
+      situation: data.situation,
+      userMessage: data.userMessage
+    })
     
     resultTitle.value = '情感支持'
     resultContent.value = response.support || response.response

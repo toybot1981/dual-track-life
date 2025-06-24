@@ -4,6 +4,7 @@ import App from './App.vue'
 import router from './router'
 import i18n from './locales'
 import './assets/main.css'
+import './assets/highlight.css'
 
 const app = createApp(App)
 

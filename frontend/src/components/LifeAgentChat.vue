@@ -63,12 +63,30 @@
 import { ref, onMounted, nextTick, watch } from 'vue'
 import { useLifeAgentStore } from '@/stores/lifeAgent'
 import { useI18n } from 'vue-i18n'
+import { marked } from 'marked'
+import hljs from 'highlight.js'
 
 const { t } = useI18n()
 const lifeAgentStore = useLifeAgentStore()
 
 const inputMessage = ref('')
 const messagesContainer = ref<HTMLElement>()
+
+// 配置marked
+marked.setOptions({
+  highlight: function(code, lang) {
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        return hljs.highlight(code, { language: lang }).value
+      } catch (err) {
+        console.error('Highlight.js error:', err)
+      }
+    }
+    return hljs.highlightAuto(code).value
+  },
+  breaks: true,
+  gfm: true
+})
 
 const sendMessage = async () => {
   if (!inputMessage.value.trim() || lifeAgentStore.isLoading) return
@@ -96,13 +114,18 @@ const quickAction = async (action: string) => {
 }
 
 const formatMessage = (message: string) => {
-  // 简单的Markdown格式化
-  return message
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/\n/g, '<br>')
-    .replace(/#{1,6}\s(.*)/g, '<h3>$1</h3>')
-    .replace(/- (.*)/g, '<li>$1</li>')
+  try {
+    // 使用marked解析markdown
+    const html = marked.parse(message)
+    return html
+  } catch (error) {
+    console.error('Markdown parsing error:', error)
+    // 如果markdown解析失败，回退到简单的HTML转换
+    return message
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br>')
+  }
 }
 
 const formatTime = (timestamp: number) => {
@@ -220,8 +243,147 @@ onMounted(async () => {
 }
 
 .message-text {
-  line-height: 1.5;
+  line-height: 1.6;
   word-wrap: break-word;
+}
+
+/* Markdown样式 */
+.message-text :deep(h1),
+.message-text :deep(h2),
+.message-text :deep(h3),
+.message-text :deep(h4),
+.message-text :deep(h5),
+.message-text :deep(h6) {
+  margin: 16px 0 8px 0;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.message-text :deep(h1) { font-size: 1.5em; }
+.message-text :deep(h2) { font-size: 1.3em; }
+.message-text :deep(h3) { font-size: 1.2em; }
+.message-text :deep(h4) { font-size: 1.1em; }
+
+.message-text :deep(p) {
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+.message-text :deep(ul),
+.message-text :deep(ol) {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.message-text :deep(li) {
+  margin: 4px 0;
+  line-height: 1.5;
+}
+
+.message-text :deep(blockquote) {
+  margin: 12px 0;
+  padding: 8px 16px;
+  border-left: 4px solid #667eea;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 4px;
+  font-style: italic;
+}
+
+.message-text :deep(code) {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9em;
+}
+
+.message-text :deep(pre) {
+  background: #f8f8f8;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+  overflow-x: auto;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+.message-text :deep(pre code) {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+.message-text :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 12px 0;
+  font-size: 0.9em;
+}
+
+.message-text :deep(th),
+.message-text :deep(td) {
+  border: 1px solid #e0e0e0;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.message-text :deep(th) {
+  background: #f8f9fa;
+  font-weight: 600;
+}
+
+.message-text :deep(strong) {
+  font-weight: 600;
+  color: #333;
+}
+
+.message-text :deep(em) {
+  font-style: italic;
+  color: #666;
+}
+
+.message-text :deep(a) {
+  color: #667eea;
+  text-decoration: none;
+}
+
+.message-text :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.message-text :deep(hr) {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 16px 0;
+}
+
+/* 用户消息中的markdown样式调整 */
+.message.user .message-text :deep(blockquote) {
+  border-left-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.message.user .message-text :deep(code) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.message.user .message-text :deep(pre) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.message.user .message-text :deep(strong) {
+  color: white;
+}
+
+.message.user .message-text :deep(em) {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.message.user .message-text :deep(a) {
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .message-time {
@@ -354,6 +516,32 @@ onMounted(async () => {
     background: #333;
     color: #e0e0e0;
     border-color: #444;
+  }
+  
+  .message-text :deep(pre) {
+    background: #2a2a2a;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+  
+  .message-text :deep(code) {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
+  }
+  
+  .message-text :deep(blockquote) {
+    background: rgba(102, 126, 234, 0.2);
+    color: #e0e0e0;
+  }
+  
+  .message-text :deep(th) {
+    background: #444;
+    color: #e0e0e0;
+  }
+  
+  .message-text :deep(td) {
+    border-color: #444;
+    color: #e0e0e0;
   }
   
   .chat-input {

@@ -70,16 +70,18 @@ public class SpringAIController {
     /**
      * 流式AI聊天接口
      */
-    @PostMapping(value = "/stream/chat", produces = MediaType.TEXT_PLAIN_VALUE)
+    @PostMapping(value = "/stream/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> streamChat(@RequestBody Map<String, Object> request) {
         String query = (String) request.get("query");
+        System.out.println("[streamChat] 收到请求: query=" + query);
         if (query == null || query.trim().isEmpty()) {
             return Flux.just("错误：查询内容不能为空");
         }
-        
         try {
-            return springAIService.streamChat(query);
+            return springAIService.streamChat(query)
+                .doOnNext(chunk -> System.out.println("[streamChat] 输出: " + chunk));
         } catch (Exception e) {
+            System.out.println("[streamChat] 异常: " + e.getMessage());
             return Flux.just("AI服务暂时不可用：" + e.getMessage());
         }
     }
@@ -117,19 +119,20 @@ public class SpringAIController {
     /**
      * 基于角色的流式AI聊天
      */
-    @PostMapping(value = "/role/stream/chat", produces = MediaType.TEXT_PLAIN_VALUE)
+    @PostMapping(value = "/role/stream/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> roleBasedStreamChat(@RequestBody Map<String, Object> request) {
         String roleId = (String) request.get("roleId");
         String query = (String) request.get("query");
         String context = (String) request.get("context");
-        
+        System.out.println("[roleBasedStreamChat] 收到请求: roleId=" + roleId + ", query=" + query + ", context=" + context);
         if (roleId == null || query == null) {
             return Flux.just("错误：角色ID和查询内容不能为空");
         }
-        
         try {
-            return springAIService.roleBasedStreamChat(roleId, query, context);
+            return springAIService.roleBasedStreamChat(roleId, query, context)
+                .doOnNext(chunk -> System.out.println("[roleBasedStreamChat] 输出: " + chunk));
         } catch (Exception e) {
+            System.out.println("[roleBasedStreamChat] 异常: " + e.getMessage());
             return Flux.just("AI服务暂时不可用：" + e.getMessage());
         }
     }
@@ -282,21 +285,21 @@ public class SpringAIController {
     /**
      * 会话流式聊天（集成到对话管理）
      */
-    @PostMapping(value = "/conversation/{conversationId}/stream", produces = MediaType.TEXT_PLAIN_VALUE)
+    @PostMapping(value = "/conversation/{conversationId}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> conversationStreamChat(
             @PathVariable Long conversationId,
             @RequestBody Map<String, Object> request) {
-        
         Long userId = Long.valueOf(request.get("userId").toString());
         String userMessage = (String) request.get("message");
-        
+        System.out.println("[conversationStreamChat] 收到请求: conversationId=" + conversationId + ", userId=" + userId + ", message=" + userMessage);
         if (userMessage == null || userMessage.trim().isEmpty()) {
             return Flux.just("错误：消息内容不能为空");
         }
-        
         try {
-            return aiConversationService.streamChatWithAI(conversationId, userId, userMessage);
+            return aiConversationService.streamChatWithAI(conversationId, userId, userMessage)
+                .doOnNext(chunk -> System.out.println("[conversationStreamChat] 输出: " + chunk));
         } catch (Exception e) {
+            System.out.println("[conversationStreamChat] 异常: " + e.getMessage());
             return Flux.just("对话服务暂时不可用：" + e.getMessage());
         }
     }

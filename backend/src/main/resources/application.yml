@@ -6,7 +6,7 @@ spring:
   ai:
     # 阿里云通义千问配置
     dashscope:
-      api-key: sk-491064bc248948098035424ff3c806d9
+      api-key: ${ALI_DASHSCOPE_API_KEY}
       chat:
         options:
           model: qwen-max

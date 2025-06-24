@@ -99,7 +99,7 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
-import { AIService, type AIRole, type AIMessage } from '@/services/aiService'
+import { AIService, type AIRole, type AIMessage } from '../services/aiService'
 
 interface Props {
   currentRole: AIRole | null
@@ -168,52 +168,41 @@ const sendMessage = async () => {
   messages.value.push(userMsg)
   isLoading.value = true
   
+  // 先添加一个空的AI消息用于流式追加
+  const aiMsg: AIMessage = {
+    id: Date.now() + 1,
+    conversationId: 0,
+    userId: props.userId,
+    roleId: props.currentRole?.roleId || 'general',
+    messageType: 'ai',
+    content: '',
+    timestamp: new Date().toISOString(),
+    messageOrder: messages.value.length + 1
+  }
+  messages.value.push(aiMsg)
+  
   try {
-    let aiResponse
     if (props.currentRole) {
-      const response = await AIService.roleBasedChat(
-        props.currentRole.roleId,
-        userMessage,
-        getConversationContext()
+      await AIService.roleBasedStreamChat(
+        {
+          roleId: props.currentRole.roleId,
+          query: userMessage,
+          context: getConversationContext()
+        },
+        (chunk) => {
+          aiMsg.content += chunk
+        }
       )
-      aiResponse = response.response
     } else {
-      const response = await AIService.simpleChat(userMessage)
-      aiResponse = response.response
+      await AIService.simpleStreamChat(userMessage, (chunk) => {
+        aiMsg.content += chunk
+      })
     }
-    
-    // 添加AI回复消息
-    const aiMsg: AIMessage = {
-      id: Date.now() + 1,
-      conversationId: 0,
-      userId: props.userId,
-      roleId: props.currentRole?.roleId || 'general',
-      messageType: 'ai',
-      content: aiResponse,
-      timestamp: new Date().toISOString(),
-      messageOrder: messages.value.length + 1
-    }
-    
-    messages.value.push(aiMsg)
-    
     // 更新统计
     updateChatStatistics()
   } catch (error) {
     console.error('发送消息失败:', error)
-    
-    // 添加错误消息
-    const errorMsg: AIMessage = {
-      id: Date.now() + 1,
-      conversationId: 0,
-      userId: props.userId,
-      roleId: props.currentRole?.roleId || 'general',
-      messageType: 'ai',
-      content: '抱歉，我现在无法回复您的消息。请稍后再试。',
-      timestamp: new Date().toISOString(),
-      messageOrder: messages.value.length + 1
-    }
-    
-    messages.value.push(errorMsg)
+    aiMsg.content = '抱歉，我现在无法回复您的消息。请稍后再试。'
   } finally {
     isLoading.value = false
   }

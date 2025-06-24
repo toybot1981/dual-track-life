@@ -1,8 +1,7 @@
 import axios from 'axios'
 
 // API基础配置 - 使用当前运行的后端地址
-const API_BASE_URL = 'https://10002-iq48y0k1ndjxcnwkn4a3m-808b8b71.manusvm.computer'
-
+const API_BASE_URL = 'http://localhost:10001'
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
@@ -263,6 +262,74 @@ export class AIService {
       console.error('AI服务健康检查失败:', error)
       throw error
     }
+  }
+
+  // 流式AI聊天（通用）
+  static async simpleStreamChat(query: string, onMessage: (msg: string) => void) {
+    console.log('[simpleStreamChat] 请求参数:', query);
+    const response = await fetch(`${API_BASE_URL}/api/spring-ai/stream/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query })
+    })
+    if (!response.body) return;
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      // 处理SSE格式，去掉data:前缀和空行
+      const lines = buffer.split('\n');
+      for (const line of lines) {
+        if (line.startsWith('data:')) {
+          const content = line.replace(/^data:/, '').trim();
+          if (content) {
+            console.log('[simpleStreamChat] 收到chunk:', content);
+            onMessage(content);
+          }
+        }
+      }
+      buffer = '';
+    }
+    console.log('[simpleStreamChat] 结束');
+  }
+
+  // 流式AI聊天（基于角色）
+  static async roleBasedStreamChat(request: ChatRequest, onMessage: (msg: string) => void) {
+    console.log('[roleBasedStreamChat] 请求参数:', request);
+    const response = await fetch(`${API_BASE_URL}/api/spring-ai/role/stream/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        roleId: request.roleId,
+        query: request.query,
+        context: request.context || ''
+      })
+    })
+    if (!response.body) return;
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      // 处理SSE格式，去掉data:前缀和空行
+      const lines = buffer.split('\n');
+      for (const line of lines) {
+        if (line.startsWith('data:')) {
+          const content = line.replace(/^data:/, '').trim();
+          if (content) {
+            console.log('[roleBasedStreamChat] 收到chunk:', content);
+            onMessage(content);
+          }
+        }
+      }
+      buffer = '';
+    }
+    console.log('[roleBasedStreamChat] 结束');
   }
 }
 

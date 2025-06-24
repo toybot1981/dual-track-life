@@ -93,27 +93,26 @@ export const useLifeAgentStore = defineStore('lifeAgent', () => {
     isLoading.value = true
     
     try {
-      // 调用AI服务
-      const response = await AIService.roleBasedChat({
-        roleId: currentRoleId.value,
-        query: messageText,
-        context: getConversationContext()
-      })
-      
-      // 添加AI回复
+      // 流式调用AI服务
       const agentMessage: LifeAgentMessage = {
         id: generateMessageId(),
         userId: currentUserId.value,
-        message: response.response,
+        message: '',
         type: 'agent',
         category: category as any,
         timestamp: Date.now()
       }
       messages.value.push(agentMessage)
-      
+      await AIService.roleBasedStreamChat({
+        roleId: currentRoleId.value,
+        query: messageText,
+        context: getConversationContext()
+      }, (chunk) => {
+        agentMessage.message += chunk
+        messages.value = [...messages.value]
+      })
     } catch (error) {
       console.error('发送消息失败:', error)
-      
       // 添加错误消息
       const errorMessage: LifeAgentMessage = {
         id: generateMessageId(),

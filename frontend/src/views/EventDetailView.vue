@@ -163,7 +163,7 @@ import { useRouter, useRoute } from 'vue-router'
 const router = useRouter()
 const route = useRoute()
 
-const event = ref(null)
+const event = ref<any>(null)
 const aiAnalysis = ref('')
 
 // 模拟事件数据

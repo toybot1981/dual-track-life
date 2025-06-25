@@ -121,6 +121,10 @@ const formatMessage = (message: string) => {
     let processedMessage = message
       // 修正如'##-'等非标准标题为标准标题
       .replace(/^(#+)[-\s]+/gm, '$1 ')
+      // 确保标题格式正确，处理可能的格式问题
+      .replace(/^(#{1,6})\s*([^\n]+)/gm, '$1 $2')
+      // 处理不完整的标题（流式传输中可能出现）
+      .replace(/^(#{1,6})\s*$/gm, '$1 ')
       // 标题前后补空行（避免标题和内容粘连）
       .replace(/([^\n])\n(#{1,6} )/g, '$1\n\n$2')
       .replace(/(#{1,6} [^\n]+)\n([^\n#\-\*\d])/g, '$1\n\n$2')
@@ -138,6 +142,13 @@ const formatMessage = (message: string) => {
       .replace(/[ \t]+$/gm, '')
       // 标点符号不分离
       .replace(/([^\s])\s*\n\s*([？！。，；：、])/g, '$1$2')
+      // 修复流式传输中可能出现的断行问题
+      .replace(/([^。！？\n])\n([^#\-\*\d\n])/g, '$1$2')
+      // 处理可能的markdown语法错误
+      .replace(/\*\*([^*]+)\*\*/g, '**$1**') // 确保粗体格式正确
+      .replace(/\*([^*]+)\*/g, '*$1*') // 确保斜体格式正确
+      // 处理引用块格式
+      .replace(/^>\s*/gm, '> ')
     
     // 使用markdown-it解析markdown
     const html = md.render(processedMessage)
@@ -149,6 +160,12 @@ const formatMessage = (message: string) => {
       .replace(/([^\s])\s*\n\s*([？！。，；：、])/g, '$1$2')
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/^(#{1,6})\s*(.+)$/gm, (match, hashes, content) => {
+        const level = hashes.length
+        return `<h${level}>${content}</h${level}>`
+      })
+      .replace(/^-\s+(.+)$/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
       .replace(/\n/g, '<br>')
   }
 }

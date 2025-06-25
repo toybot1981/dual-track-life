@@ -103,12 +103,49 @@ export const useLifeAgentStore = defineStore('lifeAgent', () => {
         timestamp: Date.now()
       }
       messages.value.push(agentMessage)
+      
+      let accumulatedContent = ''
+      
       await AIService.roleBasedStreamChat({
         roleId: currentRoleId.value,
         query: messageText,
         context: getConversationContext()
       }, (chunk) => {
-        agentMessage.message += chunk
+        // 累积内容
+        accumulatedContent += chunk
+        
+        // 预处理累积的内容，确保markdown格式正确
+        let processedContent = accumulatedContent
+          // 修正如'##-'等非标准标题为标准标题
+          .replace(/^(#+)[-\s]+/gm, '$1 ')
+          // 确保标题格式正确
+          .replace(/^(#{1,6})\s*([^\n]+)/gm, '$1 $2')
+          // 处理不完整的标题（流式传输中可能出现）
+          .replace(/^(#{1,6})\s*$/gm, '$1 ')
+          // 标题前后补空行（避免标题和内容粘连）
+          .replace(/([^\n])\n(#{1,6} )/g, '$1\n\n$2')
+          .replace(/(#{1,6} [^\n]+)\n([^\n#\-\*\d])/g, '$1\n\n$2')
+          // 保证每个列表项前有空行
+          .replace(/([^\n])\n(-\s)/g, '$1\n\n$2')
+          .replace(/([^\n])\n(\d+\.\s)/g, '$1\n\n$2')
+          // 列表项后如果紧跟内容也补空行
+          .replace(/(\n[-\*\+]\s[^\n]+)\n([^\n\-\*\+\d#])/g, '$1\n\n$2')
+          .replace(/(\n\d+\.\s[^\n]+)\n([^\n\-\*\+\d#])/g, '$1\n\n$2')
+          // 段落之间有适当间距
+          .replace(/\n{3,}/g, '\n\n')
+          // 处理连续空格
+          .replace(/[ \t]+/g, ' ')
+          // 处理行尾空格
+          .replace(/[ \t]+$/gm, '')
+          // 标点符号不分离
+          .replace(/([^\s])\s*\n\s*([？！。，；：、])/g, '$1$2')
+          // 修复流式传输中可能出现的断行问题
+          .replace(/([^。！？\n])\n([^#\-\*\d\n])/g, '$1$2')
+        
+        // 更新消息内容
+        agentMessage.message = processedContent
+        
+        // 触发响应式更新
         messages.value = [...messages.value]
       })
     } catch (error) {

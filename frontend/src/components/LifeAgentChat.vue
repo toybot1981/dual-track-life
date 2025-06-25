@@ -12,7 +12,7 @@
       <div v-for="message in lifeAgentStore.messages" :key="message.id" 
            class="message" :class="message.type">
         <div class="message-content">
-          <div class="message-text" v-html="formatMessage(message.message)"></div>
+          <div class="message-text" v-html="formatMessage(message.message, message.isStreaming, message.renderPhase)"></div>
           <div class="message-time">
             {{ formatTime(message.timestamp) }}
           </div>
@@ -60,11 +60,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { ref, onMounted, nextTick, watch, onUnmounted } from 'vue'
 import { useLifeAgentStore } from '@/stores/lifeAgent'
 import { useI18n } from 'vue-i18n'
-import MarkdownIt from 'markdown-it'
-import hljs from 'highlight.js'
+import { ProgressiveRenderer } from '@/utils/ProgressiveRenderer'
+import { SmartScroller } from '@/utils/SmartScroller'
 
 const { t } = useI18n()
 const lifeAgentStore = useLifeAgentStore()
@@ -72,23 +72,11 @@ const lifeAgentStore = useLifeAgentStore()
 const inputMessage = ref('')
 const messagesContainer = ref<HTMLElement>()
 
-// 配置markdown-it
-const md = new MarkdownIt({
-  html: true,
-  linkify: true,
-  typographer: true,
-  breaks: true,
-  highlight: function(code, lang) {
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        return hljs.highlight(code, { language: lang }).value
-      } catch (err) {
-        console.error('Highlight.js error:', err)
-      }
-    }
-    return hljs.highlightAuto(code).value
-  }
-})
+// 创建渐进式渲染器实例
+const progressiveRenderer = new ProgressiveRenderer()
+
+// 智能滚动管理器
+let smartScroller: SmartScroller | null = null
 
 const sendMessage = async () => {
   if (!inputMessage.value.trim() || lifeAgentStore.isLoading) return
@@ -115,38 +103,18 @@ const quickAction = async (action: string) => {
   await sendMessage()
 }
 
-const formatMessage = (message: string) => {
+const formatMessage = (message: string, isStreaming: boolean = false, renderPhase: string = 'markdown') => {
   try {
-    // 简化预处理，专注于基本的markdown格式修正
-    let processedMessage = message
-      // 确保markdown标题格式正确
-      .replace(/^(#{1,6})([^#\s])/gm, '$1 $2') // 确保#后有空格
-      .replace(/^(#{1,6})[-]+\s*/gm, '$1 ') // 修正如'##-'为'## '
-      // 标点符号不分离
-      .replace(/([^\s])\s*\n\s*([？！。，；：、])/g, '$1$2')
-      // 清理多余空格
-      .replace(/[ \t]+/g, ' ')
-      .replace(/[ \t]+$/gm, '')
-      // 确保段落间有适当间距
-      .replace(/\n{3,}/g, '\n\n')
-    
-    // 使用markdown-it解析
-    const html = md.render(processedMessage)
-    return html
+    // 使用渐进式渲染器
+    return progressiveRenderer.render(message, {
+      phase: renderPhase as any,
+      isStreaming: isStreaming,
+      enableCache: !isStreaming // 流式时不使用缓存
+    })
   } catch (error) {
-    console.error('Markdown parsing error:', error)
-    // 简化的回退处理
-    return message
-      .replace(/([^\s])\s*\n\s*([？！。，；：、])/g, '$1$2')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/^(#{1,6})\s*(.+)$/gm, (match, hashes, content) => {
-        const level = hashes.length
-        return `<h${level}>${content}</h${level}>`
-      })
-      .replace(/^-\s+(.+)$/gm, '<li>$1</li>')
-      .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-      .replace(/\n/g, '<br>')
+    console.error('Progressive render error:', error)
+    // 安全回退
+    return message.replace(/\n/g, '<br>')
   }
 }
 
@@ -158,20 +126,57 @@ const formatTime = (timestamp: number) => {
 }
 
 const scrollToBottom = () => {
-  nextTick(() => {
-    if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-    }
-  })
+  if (smartScroller) {
+    smartScroller.smoothScrollToBottom()
+  } else {
+    nextTick(() => {
+      if (messagesContainer.value) {
+        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+      }
+    })
+  }
 }
 
 // 监听消息变化，自动滚动到底部
 watch(() => lifeAgentStore.messages.length, () => {
-  scrollToBottom()
+  nextTick(() => {
+    scrollToBottom()
+  })
 })
+
+// 监听消息内容变化（流式更新）
+watch(() => lifeAgentStore.messages, () => {
+  nextTick(() => {
+    scrollToBottom()
+  })
+}, { deep: true })
 
 onMounted(async () => {
   await lifeAgentStore.initializeAgent()
+  
+  // 初始化智能滚动管理器
+  if (messagesContainer.value) {
+    smartScroller = new SmartScroller(messagesContainer.value, {
+      scrollThreshold: 100,
+      autoScrollEnabled: true
+    })
+  }
+  
+  // 初始滚动到底部
+  nextTick(() => {
+    scrollToBottom()
+  })
+})
+
+onUnmounted(() => {
+  // 清理智能滚动管理器
+  if (smartScroller) {
+    smartScroller.destroy()
+    smartScroller = null
+  }
+  
+  // 清理渲染器缓存
+  progressiveRenderer.clearCache()
 })
 </script>
 
@@ -286,7 +291,7 @@ onMounted(async () => {
 .message-text :deep(h4),
 .message-text :deep(h5),
 .message-text :deep(h6) {
-  margin: 20px 0 12px 0;
+  margin: 12px 0 6px 0;
   font-weight: 700;
   line-height: 1.3;
   color: #1f2937;
@@ -304,7 +309,8 @@ onMounted(async () => {
   padding-bottom: 10px;
   color: #1f2937;
   font-weight: 800;
-  margin-top: 24px;
+  margin-top: 16px;
+  margin-bottom: 8px;
 }
 .message-text :deep(h2) { 
   font-size: 1.4em; 
@@ -312,7 +318,8 @@ onMounted(async () => {
   padding-bottom: 8px;
   color: #374151;
   font-weight: 700;
-  margin-top: 20px;
+  margin-top: 14px;
+  margin-bottom: 6px;
   background: linear-gradient(90deg, rgba(102, 126, 234, 0.1) 0%, transparent 100%);
   padding-left: 12px;
   border-radius: 4px;
@@ -323,25 +330,29 @@ onMounted(async () => {
   font-weight: 600;
   border-left: 4px solid #667eea;
   padding-left: 12px;
-  margin-top: 16px;
+  margin-top: 12px;
+  margin-bottom: 6px;
 }
 .message-text :deep(h4) { 
   font-size: 1.15em; 
   color: #4b5563; 
   font-weight: 600;
-  margin-top: 14px;
+  margin-top: 10px;
+  margin-bottom: 6px;
 }
 .message-text :deep(h5) { 
   font-size: 1.1em; 
   color: #6b7280; 
   font-weight: 600;
-  margin-top: 12px;
+  margin-top: 10px;
+  margin-bottom: 6px;
 }
 .message-text :deep(h6) { 
   font-size: 1.05em; 
   color: #6b7280; 
   font-weight: 600;
-  margin-top: 12px;
+  margin-top: 10px;
+  margin-bottom: 6px;
 }
 
 .message-text :deep(p) {

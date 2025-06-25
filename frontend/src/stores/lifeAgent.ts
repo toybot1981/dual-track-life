@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import AIService from '@/services/aiService'
+import { SmartBuffer } from '@/utils/SmartBuffer'
 
 export interface LifeAgentMessage {
   id: string
@@ -9,6 +10,8 @@ export interface LifeAgentMessage {
   type: 'user' | 'agent'
   category?: 'planning' | 'evaluation' | 'goal' | 'general'
   timestamp: number
+  isStreaming?: boolean // 添加流状态标记
+  renderPhase?: 'text' | 'basic' | 'markdown' | 'enhanced' // 渲染阶段
 }
 
 export interface LifeAgentPlan {
@@ -132,7 +135,6 @@ export const useLifeAgentStore = defineStore('lifeAgent', () => {
       messages.value.push(aiDemoMessage)
     }
   }
-  
   // 发送消息
   const sendMessage = async (messageText: string, category: string = 'general') => {
     if (!messageText.trim() || isLoading.value) return
@@ -141,16 +143,20 @@ export const useLifeAgentStore = defineStore('lifeAgent', () => {
     const userMessage: LifeAgentMessage = {
       id: generateMessageId(),
       userId: currentUserId.value,
-      message: messageText,
+      message: messageText.trim(),
       type: 'user',
       category: category as any,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      renderPhase: 'markdown'
     }
     messages.value.push(userMessage)
     
     isLoading.value = true
     
     try {
+      // 创建智能缓冲器
+      const smartBuffer = new SmartBuffer()
+      
       // 流式调用AI服务
       const agentMessage: LifeAgentMessage = {
         id: generateMessageId(),
@@ -158,39 +164,68 @@ export const useLifeAgentStore = defineStore('lifeAgent', () => {
         message: '',
         type: 'agent',
         category: category as any,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        isStreaming: true, // 流状态标记
+        renderPhase: 'text' // 流式时使用文本渲染
       }
       messages.value.push(agentMessage)
       
-      let accumulatedContent = ''
+      let lastUpdateTime = Date.now()
+      const updateThrottle = 100 // 100ms更新间隔，避免过于频繁的DOM更新
       
       await AIService.roleBasedStreamChat({
         roleId: currentRoleId.value,
         query: messageText,
         context: getConversationContext()
       }, (chunk) => {
-        // 累积内容
-        accumulatedContent += chunk
+        // 使用智能缓冲器处理数据块
+        const renderableContent = smartBuffer.addChunk(chunk)
         
-        // 简化预处理，专注于基本的markdown格式修正
-        let processedContent = accumulatedContent
-          // 确保markdown标题格式正确
-          .replace(/^(#{1,6})([^#\s])/gm, '$1 $2') // 确保#后有空格
-          .replace(/^(#{1,6})[-]+\s*/gm, '$1 ') // 修正如'##-'为'## '
-          // 标点符号不分离
-          .replace(/([^\s])\s*\n\s*([？！。，；：、])/g, '$1$2')
-          // 清理多余空格
-          .replace(/[ \t]+/g, ' ')
-          .replace(/[ \t]+$/gm, '')
-          // 确保段落间有适当间距
-          .replace(/\n{3,}/g, '\n\n')
-        
-        // 更新消息内容
-        agentMessage.message = processedContent
-        
-        // 触发响应式更新
-        messages.value = [...messages.value]
+        // 节流更新，避免过于频繁的DOM操作
+        const now = Date.now()
+        if (renderableContent && (now - lastUpdateTime > updateThrottle)) {
+          // 更新消息内容（使用智能缓冲的安全内容）
+          agentMessage.message = renderableContent
+          
+          // 触发响应式更新
+          messages.value = [...messages.value]
+          lastUpdateTime = now
+        } else if (!renderableContent) {
+          // 如果没有安全渲染点，显示完整缓冲内容（但保持文本模式）
+          agentMessage.message = smartBuffer.getFullContent()
+          
+          if (now - lastUpdateTime > updateThrottle) {
+            messages.value = [...messages.value]
+            lastUpdateTime = now
+          }
+        }
       })
+      
+      // 流结束后，进行完整的markdown处理
+      const finalContent = smartBuffer.getFullContent()
+      
+      // 基础文本清理
+      const cleanedContent = finalContent
+        // 标点符号不分离
+        .replace(/([^\s])\s*\n\s*([？！。，；：、])/g, '$1$2')
+        // 清理多余空格
+        .replace(/[ \t]+/g, ' ')
+        .replace(/[ \t]+$/gm, '')
+        // 确保段落间有适当间距
+        .replace(/\n{3,}/g, '\n\n')
+      
+      // 更新为最终处理后的内容并切换到markdown渲染模式
+      agentMessage.message = cleanedContent
+      agentMessage.isStreaming = false
+      agentMessage.renderPhase = 'markdown'
+      
+      // 最终更新
+      messages.value = [...messages.value]
+      
+      // 输出缓冲器统计信息（调试用）
+      const stats = smartBuffer.getStats()
+      console.log('SmartBuffer Stats:', stats)
+      
     } catch (error) {
       console.error('发送消息失败:', error)
       // 添加错误消息
@@ -200,7 +235,8 @@ export const useLifeAgentStore = defineStore('lifeAgent', () => {
         message: '抱歉，我现在无法回复您的消息。请稍后再试。',
         type: 'agent',
         category: 'general',
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        renderPhase: 'markdown'
       }
       messages.value.push(errorMessage)
     } finally {

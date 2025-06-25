@@ -1,68 +1,130 @@
-# 双轨人生 (Dual Track Life)
+# Dual Track Life
 
-一个帮助用户探索和规划人生可能性的智能助手应用。
+一个创新的人生管理平台，让您记录真实的人生轨迹，同时通过AI驱动的虚拟人生模拟探索无限可能。
 
-## 项目简介
+## 核心功能
 
-双轨人生是一个创新的生活规划和人生探索平台，它通过AI技术帮助用户：
+### 📝 真实人生记录
+记录您的真实人生事件，包括工作成就、个人成长、人际关系等。
 
-- 探索人生的多种可能性
-- 获取个性化的人生建议
-- 记录和分析重要生活事件
-- 进行深度的自我反思
-- 规划未来的发展轨迹
+### 🎮 虚拟人生模拟
+通过AI驱动的虚拟人生模拟，探索不同的人生选择和可能性。
+
+### 🤖 AI人生导师
+获得个性化的AI洞察和建议，帮助您做出更好的人生决策。
 
 ## 技术栈
 
-### 后端
-- Spring Boot
-- Spring AI
-- DashScope AI
-- H2 Database
-- JPA
-
 ### 前端
-- Vue.js 3
-- TypeScript
+- Vue 3 + TypeScript
+- Vite
 - Tailwind CSS
+- Vue Router
+- Pinia
 
-## 主要功能
+### 后端
+- Spring Boot 3.4.5
+- Spring AI 1.0.0
+- H2 Database
+- Maven
 
-- 🤖 AI生命导师：提供个性化的人生建议和指导
-- 📝 事件记录：记录和分析重要的人生事件
-- 🔄 平行宇宙：探索不同的人生可能性
-- 📊 轨迹分析：分析个人成长轨迹和发展趋势
-- 💭 深度反思：辅助进行有意义的自我反思
+### AI集成
+- 阿里云通义千问 (qwen-max)
+- DashScope API
 
 ## 快速开始
 
 ### 环境要求
+- Node.js 18+
 - Java 17+
-- Node.js 16+
 - Maven 3.6+
 
-### 后端启动
+### 安装和运行
+
+#### 1. 克隆仓库
 ```bash
-cd backend
-./mvnw spring-boot:run
+git clone https://github.com/toybot1981/dual-track-life.git
+cd dual-track-life
 ```
 
-### 前端启动
+#### 2. 后端设置
+```bash
+cd backend
+mvn clean package -DskipTests
+ALI_DASHSCOPE_API_KEY="your_api_key" java -jar target/backend-1.0.0.jar
+```
+
+#### 3. 前端设置
 ```bash
 cd frontend
 npm install
+cp .env.example .env.local
+# 编辑 .env.local 设置 VITE_API_BASE_URL
 npm run dev
 ```
 
 ## 环境变量配置
 
-后端需要配置以下环境变量：
-- DASHSCOPE_API_KEY：阿里云通义千问API密钥
+### 前端
+```bash
+# .env.local
+VITE_API_BASE_URL=http://localhost:10003
+```
 
-## 贡献指南
+### 后端
+```bash
+# 环境变量
+ALI_DASHSCOPE_API_KEY=your_dashscope_api_key
+```
 
-欢迎提交Issue和Pull Request来帮助改进项目！
+## 部署
+
+详细的部署说明请参考 [DEPLOYMENT.md](./DEPLOYMENT.md)
+
+## API文档
+
+### 健康检查
+```bash
+GET /api/life-agent/health
+```
+
+### AI聊天
+```bash
+POST /api/spring-ai/simple/chat
+Content-Type: application/json
+
+{
+  "query": "你好，请介绍一下自己"
+}
+```
+
+## 项目结构
+
+```
+dual-track-life/
+├── frontend/           # Vue.js 前端应用
+│   ├── src/
+│   │   ├── components/ # Vue组件
+│   │   ├── views/      # 页面视图
+│   │   ├── stores/     # Pinia状态管理
+│   │   └── services/   # API服务
+│   └── public/         # 静态资源
+├── backend/            # Spring Boot 后端应用
+│   ├── src/main/java/  # Java源代码
+│   └── src/main/resources/ # 配置文件
+└── docs/               # 文档
+```
+
+## 贡献
+
+欢迎提交Issue和Pull Request！
 
 ## 许可证
 
 MIT License
+
+## 联系方式
+
+- GitHub: [toybot1981/dual-track-life](https://github.com/toybot1981/dual-track-life)
+- Issues: [GitHub Issues](https://github.com/toybot1981/dual-track-life/issues)
+

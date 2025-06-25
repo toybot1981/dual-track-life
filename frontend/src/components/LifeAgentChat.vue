@@ -63,7 +63,7 @@
 import { ref, onMounted, nextTick, watch } from 'vue'
 import { useLifeAgentStore } from '@/stores/lifeAgent'
 import { useI18n } from 'vue-i18n'
-import { marked } from 'marked'
+import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
 
 const { t } = useI18n()
@@ -72,8 +72,12 @@ const lifeAgentStore = useLifeAgentStore()
 const inputMessage = ref('')
 const messagesContainer = ref<HTMLElement>()
 
-// 配置marked
-marked.setOptions({
+// 配置markdown-it
+const md = new MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: true,
+  breaks: true,
   highlight: function(code, lang) {
     if (lang && hljs.getLanguage(lang)) {
       try {
@@ -83,15 +87,7 @@ marked.setOptions({
       }
     }
     return hljs.highlightAuto(code).value
-  },
-  breaks: true,
-  gfm: true,
-  headerIds: false,
-  mangle: false,
-  sanitize: false,
-  smartLists: true,
-  smartypants: false,
-  xhtml: false
+  }
 })
 
 const sendMessage = async () => {
@@ -152,8 +148,8 @@ const formatMessage = (message: string) => {
       // 最后再次确保标点符号不分离
       .replace(/([^\s])\s*\n\s*([？！。，；：、])/g, '$1$2')
     
-    // 使用marked解析markdown
-    const html = marked.parse(processedMessage)
+    // 使用markdown-it解析markdown
+    const html = md.render(processedMessage)
     return html
   } catch (error) {
     console.error('Markdown parsing error:', error)

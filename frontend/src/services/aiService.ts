@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // API基础配置 - 使用环境变量
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10003'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10001'
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,

@@ -1,7 +1,7 @@
 import axios from 'axios'
 
-// API基础配置 - 使用当前运行的后端地址
-const API_BASE_URL = 'https://10003-iq48y0k1ndjxcnwkn4a3m-808b8b71.manusvm.computer'
+// API基础配置 - 使用环境变量
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10003'
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,

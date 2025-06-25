@@ -116,13 +116,17 @@ export const useLifeAgentStore = defineStore('lifeAgent', () => {
         
         // 预处理累积的内容，确保markdown格式正确
         let processedContent = accumulatedContent
-          // 只修正明确的markdown标题格式问题，不要创建新的标题
+          // 确保markdown标题格式正确（标题符号后必须有空格）
+          .replace(/^(#{1,6})([^#\s])/gm, '$1 $2') // 确保#后有空格
           .replace(/^(#{1,6})[-]+\s*/gm, '$1 ') // 修正如'##-'为'## '
           .replace(/^(#{1,6})\s{2,}/gm, '$1 ') // 修正多余空格
           // 标点符号不分离
           .replace(/([^\s])\s*\n\s*([？！。，；：、])/g, '$1$2')
-          // 修复流式传输中普通文本的断行问题
+          // 修复流式传输中普通文本的断行问题，但保护标题行
           .replace(/([^。！？\n])\n([^#\-\*\d\n])/g, '$1$2')
+          // 确保标题前后有换行
+          .replace(/([^\n])\n(#{1,6}\s)/g, '$1\n\n$2')
+          .replace(/(#{1,6}\s[^\n]+)\n([^\n])/g, '$1\n\n$2')
           // 处理连续空格
           .replace(/[ \t]+/g, ' ')
           // 处理行尾空格

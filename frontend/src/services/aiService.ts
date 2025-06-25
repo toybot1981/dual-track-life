@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // API基础配置 - 使用当前运行的后端地址
-const API_BASE_URL = 'http://localhost:10001'
+const API_BASE_URL = 'https://10003-iq48y0k1ndjxcnwkn4a3m-808b8b71.manusvm.computer'
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,

@@ -85,7 +85,13 @@ marked.setOptions({
     return hljs.highlightAuto(code).value
   },
   breaks: true,
-  gfm: true
+  gfm: true,
+  headerIds: false,
+  mangle: false,
+  sanitize: false,
+  smartLists: true,
+  smartypants: false,
+  xhtml: false
 })
 
 const sendMessage = async () => {
@@ -115,8 +121,22 @@ const quickAction = async (action: string) => {
 
 const formatMessage = (message: string) => {
   try {
+    // 预处理消息，确保Markdown格式正确
+    let processedMessage = message
+      // 确保标题前后有空行
+      .replace(/([^\n])(#{1,6}\s)/g, '$1\n\n$2')
+      .replace(/(#{1,6}[^\n]+)([^\n])/g, '$1\n\n$2')
+      // 确保列表前后有空行
+      .replace(/([^\n])(\n[-*+]\s)/g, '$1\n$2')
+      .replace(/([^\n])(\n\d+\.\s)/g, '$1\n$2')
+      // 确保段落之间有适当间距
+      .replace(/\n{3,}/g, '\n\n')
+      // 修复列表项之间的间距
+      .replace(/(\n[-*+]\s[^\n]+)\n(?=[-*+]\s)/g, '$1\n')
+      .replace(/(\n\d+\.\s[^\n]+)\n(?=\d+\.\s)/g, '$1\n')
+    
     // 使用marked解析markdown
-    const html = marked.parse(message)
+    const html = marked.parse(processedMessage)
     return html
   } catch (error) {
     console.error('Markdown parsing error:', error)
@@ -254,30 +274,56 @@ onMounted(async () => {
 .message-text :deep(h4),
 .message-text :deep(h5),
 .message-text :deep(h6) {
-  margin: 16px 0 8px 0;
+  margin: 20px 0 12px 0;
   font-weight: 600;
   line-height: 1.3;
+  color: #1f2937;
 }
 
-.message-text :deep(h1) { font-size: 1.5em; }
-.message-text :deep(h2) { font-size: 1.3em; }
+.message-text :deep(h1) { 
+  font-size: 1.5em; 
+  border-bottom: 2px solid #e5e7eb; 
+  padding-bottom: 8px;
+}
+.message-text :deep(h2) { 
+  font-size: 1.3em; 
+  border-bottom: 1px solid #e5e7eb; 
+  padding-bottom: 6px;
+}
 .message-text :deep(h3) { font-size: 1.2em; }
 .message-text :deep(h4) { font-size: 1.1em; }
+.message-text :deep(h5) { font-size: 1.05em; }
+.message-text :deep(h6) { font-size: 1em; color: #6b7280; }
 
 .message-text :deep(p) {
-  margin: 8px 0;
+  margin: 12px 0;
   line-height: 1.6;
 }
 
 .message-text :deep(ul),
 .message-text :deep(ol) {
-  margin: 8px 0;
-  padding-left: 20px;
+  margin: 16px 0;
+  padding-left: 24px;
 }
 
 .message-text :deep(li) {
-  margin: 4px 0;
+  margin: 6px 0;
   line-height: 1.5;
+}
+
+.message-text :deep(ul li) {
+  list-style-type: disc;
+}
+
+.message-text :deep(ol li) {
+  list-style-type: decimal;
+}
+
+.message-text :deep(ul ul),
+.message-text :deep(ol ol),
+.message-text :deep(ul ol),
+.message-text :deep(ol ul) {
+  margin: 4px 0;
 }
 
 .message-text :deep(blockquote) {

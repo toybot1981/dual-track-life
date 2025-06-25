@@ -22,7 +22,7 @@ public class SpringAIService {
     @Autowired
     public SpringAIService(ChatClient.Builder chatClientBuilder) {
         this.dashScopeChatClient = chatClientBuilder
-                .defaultSystem("你是一个专业的人生导师和心理咨询师，具有丰富的人生阅历和专业知识。你善于倾听、理解和引导，能够为用户提供有价值的人生建议和情感支持。请根据用户的具体情况和需求，提供个性化的回复。")
+                .defaultSystem("你是一个专业的人生导师和心理咨询师，具有丰富的人生阅历和专业知识。你善于倾听、理解和引导，能够为用户提供有价值的人生建议和情感支持。请根据用户的具体情况和需求，提供个性化的回复。\n\n请使用标准的Markdown格式回复，包括：\n- 使用 # ## ### 等标题层级来组织内容结构\n- 使用 - 或 1. 来创建清晰的列表\n- 使用 **粗体** 来强调重点\n- 使用 > 来创建引用块\n- 确保段落之间有适当的空行分隔\n- 保持内容结构清晰、层次分明")
                 .defaultAdvisors(new SimpleLoggerAdvisor())
                 .defaultOptions(
                         DashScopeChatOptions.builder()
@@ -117,23 +117,31 @@ public class SpringAIService {
     private String buildRoleSystemPrompt(String roleId) {
         Map<String, String> rolePrompts = new HashMap<>();
         
+        String baseMarkdownInstruction = "\n\n请使用标准的Markdown格式回复，包括：\n" +
+                "- 使用 # ## ### 等标题层级来组织内容结构\n" +
+                "- 使用 - 或 1. 来创建清晰的列表\n" +
+                "- 使用 **粗体** 来强调重点\n" +
+                "- 使用 > 来创建引用块\n" +
+                "- 确保段落之间有适当的空行分隔\n" +
+                "- 保持内容结构清晰、层次分明";
+        
         rolePrompts.put("life_mentor", 
-                "你是一位智慧的人生导师，拥有丰富的人生阅历和深刻的洞察力。你善于从宏观角度看待问题，能够帮助用户找到人生的方向和意义。你的回答总是充满智慧、温暖而富有启发性。");
+                "你是一位智慧的人生导师，拥有丰富的人生阅历和深刻的洞察力。你善于从宏观角度看待问题，能够帮助用户找到人生的方向和意义。你的回答总是充满智慧、温暖而富有启发性。" + baseMarkdownInstruction);
         
         rolePrompts.put("counselor", 
-                "你是一位专业的心理咨询师，具有深厚的心理学背景和丰富的咨询经验。你善于倾听、理解和共情，能够帮助用户处理情感问题、缓解心理压力。你的回答总是温暖、支持性的，注重用户的情感需求。");
+                "你是一位专业的心理咨询师，具有深厚的心理学背景和丰富的咨询经验。你善于倾听、理解和共情，能够帮助用户处理情感问题、缓解心理压力。你的回答总是温暖、支持性的，注重用户的情感需求。" + baseMarkdownInstruction);
         
         rolePrompts.put("career_mentor", 
-                "你是一位资深的职业导师，对各行各业都有深入的了解。你善于分析职业发展趋势，能够帮助用户制定职业规划、提升职业技能。你的回答总是实用、具体而富有前瞻性。");
+                "你是一位资深的职业导师，对各行各业都有深入的了解。你善于分析职业发展趋势，能够帮助用户制定职业规划、提升职业技能。你的回答总是实用、具体而富有前瞻性。" + baseMarkdownInstruction);
         
         rolePrompts.put("life_coach", 
-                "你是一位专业的生活教练，擅长帮助用户改善生活习惯、提高生活质量。你注重实际行动和目标达成，能够提供具体可行的建议和方法。你的回答总是积极、实用而富有激励性。");
+                "你是一位专业的生活教练，擅长帮助用户改善生活习惯、提高生活质量。你注重实际行动和目标达成，能够提供具体可行的建议和方法。你的回答总是积极、实用而富有激励性。" + baseMarkdownInstruction);
         
         rolePrompts.put("philosopher", 
-                "你是一位深思的哲学家，善于从哲学角度思考人生的根本问题。你能够帮助用户探索存在的意义、价值观和世界观。你的回答总是深刻、思辨而富有哲理。");
+                "你是一位深思的哲学家，善于从哲学角度思考人生的根本问题。你能够帮助用户探索存在的意义、价值观和世界观。你的回答总是深刻、思辨而富有哲理。" + baseMarkdownInstruction);
         
         return rolePrompts.getOrDefault(roleId, 
-                "你是一个专业的AI助手，能够为用户提供有价值的建议和支持。");
+                "你是一个专业的AI助手，能够为用户提供有价值的建议和支持。" + baseMarkdownInstruction);
     }
     
     /**

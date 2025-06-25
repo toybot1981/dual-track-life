@@ -22,7 +22,7 @@ public class SpringAIService {
     @Autowired
     public SpringAIService(ChatClient.Builder chatClientBuilder) {
         this.dashScopeChatClient = chatClientBuilder
-                .defaultSystem("你是一个专业的人生导师和心理咨询师，具有丰富的人生阅历和专业知识。你善于倾听、理解和引导，能够为用户提供有价值的人生建议和情感支持。请根据用户的具体情况和需求，提供个性化的回复。\n\n请使用标准的Markdown格式回复，包括：\n- 使用 # ## ### 等标题层级来组织内容结构\n- 使用 - 或 1. 来创建清晰的列表\n- 使用 **粗体** 来强调重点\n- 使用 > 来创建引用块\n- 确保段落之间有适当的空行分隔\n- 保持内容结构清晰、层次分明")
+                .defaultSystem("你是一个专业的人生导师和心理咨询师，具有丰富的人生阅历和专业知识。你善于倾听、理解和引导，能够为用户提供有价值的人生建议和情感支持。请根据用户的具体情况和需求，提供个性化的回复。\n\n请严格使用标准的Markdown格式回复：\n- 仅对真正的章节或主题使用 #、##、### 等标题，不要滥用标题。\n- 普通分点请用 - 或 1. 2. 3. 作为列表，且每个列表项前后要有空行。\n- 用 **粗体** 强调重点。\n- 用 > 创建引用块。\n- 段落之间必须有空行分隔。\n- 保持内容结构清晰、层次分明，便于前端渲染。\n- 不要把所有内容都用标题包裹。\n- 不要输出无意义的空标题。")
                 .defaultAdvisors(new SimpleLoggerAdvisor())
                 .defaultOptions(
                         DashScopeChatOptions.builder()
@@ -117,13 +117,15 @@ public class SpringAIService {
     private String buildRoleSystemPrompt(String roleId) {
         Map<String, String> rolePrompts = new HashMap<>();
         
-        String baseMarkdownInstruction = "\n\n请使用标准的Markdown格式回复，包括：\n" +
-                "- 使用 # ## ### 等标题层级来组织内容结构\n" +
-                "- 使用 - 或 1. 来创建清晰的列表\n" +
-                "- 使用 **粗体** 来强调重点\n" +
-                "- 使用 > 来创建引用块\n" +
-                "- 确保段落之间有适当的空行分隔\n" +
-                "- 保持内容结构清晰、层次分明";
+        String baseMarkdownInstruction = "\n\n请严格使用标准的Markdown格式回复：\n" +
+                "- 仅对真正的章节或主题使用 #、##、### 等标题，不要滥用标题。\n" +
+                "- 普通分点请用 - 或 1. 2. 3. 作为列表，且每个列表项前后要有空行。\n" +
+                "- 用 **粗体** 强调重点。\n" +
+                "- 用 > 创建引用块。\n" +
+                "- 段落之间必须有空行分隔。\n" +
+                "- 保持内容结构清晰、层次分明，便于前端渲染。\n" +
+                "- 不要把所有内容都用标题包裹。\n" +
+                "- 不要输出无意义的空标题。";
         
         rolePrompts.put("life_mentor", 
                 "你是一位智慧的人生导师，拥有丰富的人生阅历和深刻的洞察力。你善于从宏观角度看待问题，能够帮助用户找到人生的方向和意义。你的回答总是充满智慧、温暖而富有启发性。" + baseMarkdownInstruction);

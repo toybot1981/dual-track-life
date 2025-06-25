@@ -117,37 +117,25 @@ const quickAction = async (action: string) => {
 
 const formatMessage = (message: string) => {
   try {
-    // 预处理消息，确保Markdown格式正确
+    // 简化预处理，专注于基本的markdown格式修正
     let processedMessage = message
-      // 确保markdown标题格式正确（标题符号后必须有空格）
+      // 确保markdown标题格式正确
       .replace(/^(#{1,6})([^#\s])/gm, '$1 $2') // 确保#后有空格
       .replace(/^(#{1,6})[-]+\s*/gm, '$1 ') // 修正如'##-'为'## '
-      .replace(/^(#{1,6})\s{2,}/gm, '$1 ') // 修正标题多余空格
-      // 确保标题前后有换行
-      .replace(/([^\n])\n(#{1,6}\s)/g, '$1\n\n$2')
-      .replace(/(#{1,6}\s[^\n]+)\n([^\n])/g, '$1\n\n$2')
       // 标点符号不分离
       .replace(/([^\s])\s*\n\s*([？！。，；：、])/g, '$1$2')
-      // 修复流式传输中普通文本的断行问题，但保护标题行
-      .replace(/([^。！？\n])\n([^#\-\*\d\n])/g, '$1$2')
-      // 处理连续空格
+      // 清理多余空格
       .replace(/[ \t]+/g, ' ')
-      // 处理行尾空格
       .replace(/[ \t]+$/gm, '')
-      // 段落之间有适当间距
+      // 确保段落间有适当间距
       .replace(/\n{3,}/g, '\n\n')
-      // 确保markdown语法正确
-      .replace(/\*\*([^*]+)\*\*/g, '**$1**') // 确保粗体格式正确
-      .replace(/\*([^*]+)\*/g, '*$1*') // 确保斜体格式正确
-      // 处理引用块格式
-      .replace(/^>\s*/gm, '> ')
     
-    // 使用markdown-it解析markdown
+    // 使用markdown-it解析
     const html = md.render(processedMessage)
     return html
   } catch (error) {
     console.error('Markdown parsing error:', error)
-    // 如果markdown解析失败，回退到简单的HTML转换
+    // 简化的回退处理
     return message
       .replace(/([^\s])\s*\n\s*([？！。，；：、])/g, '$1$2')
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')

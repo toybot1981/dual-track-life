@@ -123,6 +123,17 @@ const formatMessage = (message: string) => {
   try {
     // 预处理消息，确保Markdown格式正确
     let processedMessage = message
+      // 首先处理标点符号分离问题 - 这是最重要的修复
+      .replace(/([^\s\n])\s*\n+\s*([？！。，；：、])/g, '$1$2')
+      .replace(/([？！。，；：、])\s*\n+\s*([？！。，；：、])/g, '$1$2')
+      .replace(/\s+([？！。，；：、])/g, '$1')
+      // 处理中文序号标题（一、二、三、等）
+      .replace(/^([一二三四五六七八九十]+、[^\n]+)/gm, '## $1')
+      .replace(/^(\d+、[^\n]+)/gm, '## $1')
+      // 处理英文序号标题（1. 2. 3. 等开头的标题）
+      .replace(/^(\d+\.\s*[^\n]*[：:][^\n]*)/gm, '## $1')
+      // 处理带有连字符或破折号的标题
+      .replace(/^([一二三四五六七八九十]+、[^\n]*[-–—][^\n]*)/gm, '## $1')
       // 确保标题前后有空行
       .replace(/([^\n])(#{1,6}\s)/g, '$1\n\n$2')
       .replace(/(#{1,6}[^\n]+)([^\n])/g, '$1\n\n$2')
@@ -134,6 +145,12 @@ const formatMessage = (message: string) => {
       // 修复列表项之间的间距
       .replace(/(\n[-*+]\s[^\n]+)\n(?=[-*+]\s)/g, '$1\n')
       .replace(/(\n\d+\.\s[^\n]+)\n(?=\d+\.\s)/g, '$1\n')
+      // 处理连续空格
+      .replace(/[ \t]+/g, ' ')
+      // 处理行尾空格
+      .replace(/[ \t]+$/gm, '')
+      // 最后再次确保标点符号不分离
+      .replace(/([^\s])\s*\n\s*([？！。，；：、])/g, '$1$2')
     
     // 使用marked解析markdown
     const html = marked.parse(processedMessage)
@@ -142,6 +159,7 @@ const formatMessage = (message: string) => {
     console.error('Markdown parsing error:', error)
     // 如果markdown解析失败，回退到简单的HTML转换
     return message
+      .replace(/([^\s])\s*\n\s*([？！。，；：、])/g, '$1$2')
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/\n/g, '<br>')
@@ -268,6 +286,16 @@ onMounted(async () => {
 }
 
 /* Markdown样式 */
+.message-text {
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  /* 防止标点符号单独成行 */
+  text-align: justify;
+  text-justify: inter-ideograph;
+}
+
 .message-text :deep(h1),
 .message-text :deep(h2),
 .message-text :deep(h3),
@@ -275,25 +303,62 @@ onMounted(async () => {
 .message-text :deep(h5),
 .message-text :deep(h6) {
   margin: 20px 0 12px 0;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.3;
   color: #1f2937;
+  /* 确保标题正确换行 */
+  word-break: keep-all;
+  white-space: normal;
+  /* 增强标题视觉效果 */
+  display: block;
+  clear: both;
 }
 
 .message-text :deep(h1) { 
-  font-size: 1.5em; 
-  border-bottom: 2px solid #e5e7eb; 
-  padding-bottom: 8px;
+  font-size: 1.6em; 
+  border-bottom: 3px solid #667eea; 
+  padding-bottom: 10px;
+  color: #1f2937;
+  font-weight: 800;
+  margin-top: 24px;
 }
 .message-text :deep(h2) { 
-  font-size: 1.3em; 
-  border-bottom: 1px solid #e5e7eb; 
-  padding-bottom: 6px;
+  font-size: 1.4em; 
+  border-bottom: 2px solid #667eea; 
+  padding-bottom: 8px;
+  color: #374151;
+  font-weight: 700;
+  margin-top: 20px;
+  background: linear-gradient(90deg, rgba(102, 126, 234, 0.1) 0%, transparent 100%);
+  padding-left: 12px;
+  border-radius: 4px;
 }
-.message-text :deep(h3) { font-size: 1.2em; }
-.message-text :deep(h4) { font-size: 1.1em; }
-.message-text :deep(h5) { font-size: 1.05em; }
-.message-text :deep(h6) { font-size: 1em; color: #6b7280; }
+.message-text :deep(h3) { 
+  font-size: 1.25em; 
+  color: #4b5563; 
+  font-weight: 600;
+  border-left: 4px solid #667eea;
+  padding-left: 12px;
+  margin-top: 16px;
+}
+.message-text :deep(h4) { 
+  font-size: 1.15em; 
+  color: #4b5563; 
+  font-weight: 600;
+  margin-top: 14px;
+}
+.message-text :deep(h5) { 
+  font-size: 1.1em; 
+  color: #6b7280; 
+  font-weight: 600;
+  margin-top: 12px;
+}
+.message-text :deep(h6) { 
+  font-size: 1.05em; 
+  color: #6b7280; 
+  font-weight: 600;
+  margin-top: 12px;
+}
 
 .message-text :deep(p) {
   margin: 12px 0;

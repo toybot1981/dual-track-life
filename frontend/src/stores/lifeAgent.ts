@@ -64,7 +64,7 @@ export const useLifeAgentStore = defineStore('lifeAgent', () => {
       isConnected.value = false
     }
     
-    // 无论健康检查是否成功，都添加欢迎消息和demo数据
+    // 只在没有消息时添加欢迎消息
     if (messages.value.length === 0) {
       const welcomeMessage: LifeAgentMessage = {
         id: generateMessageId(),
@@ -75,66 +75,9 @@ export const useLifeAgentStore = defineStore('lifeAgent', () => {
         timestamp: Date.now()
       }
       messages.value.push(welcomeMessage)
-      
-      // 添加用户demo消息
-      const userDemoMessage: LifeAgentMessage = {
-        id: generateMessageId(),
-        userId: currentUserId.value,
-        message: '我想制定一个人生规划',
-        type: 'user',
-        category: 'planning',
-        timestamp: Date.now() + 1000
-      }
-      messages.value.push(userDemoMessage)
-      
-      // 添加AI demo回复（包含您提供的文本）
-      const aiDemoMessage: LifeAgentMessage = {
-        id: generateMessageId(),
-        userId: currentUserId.value,
-        message: `# 制定人生规划指南
-
-很高兴您决定开始制定个人的人生规划！一个清晰的人生规划可以帮助我们更加明确地知道自己想要什么，以及如何达成这些目标。下面我将为您提供一个系统性的指导框架：
-
-## 1. 自我探索和理解
-
-- **了解自己**：深入思考您的兴趣、价值观、优势和劣势
-- **设定愿景**：想象十年甚至更长时间后，您希望自己的生活是怎样的？包括职业发展、家庭关系等方面
-
-## 2. 目标设定
-
-根据您的愿景，设定一些具体可实现的长期目标。例如：
-- "成为一名优秀的软件工程师"
-- "拥有自己的小企业"
-
-**短期目标**：为达到每个长期目标而设立一年内可达成的小目标，并持续进步。
-
-## 3. 制定行动计划
-
-- 对于每一个短期目标，详细列出需要采取的具体步骤来完成它们
-- 为每项任务分配合理的时间框架
-
-## 4. 资源整合与利用
-
-- 思考可以利用哪些现有资源帮助自己更快地达成目标，比如人脉网络、技能特长等
-- 如果发现某些方面存在不足，则考虑如何通过学习或其他方式弥补差距
-
-## 5. 定期回顾调整
-
-- 每隔一段时间（建议每季度一次），回过头来看看自己的进展如何
-- 根据实际情况调整目标和计划，确保始终朝着正确的发展方向前进
-
-> "成功并不是终点，勇气才是继续前行的真正力量。" ——温斯顿·丘吉尔
-
-记住，在追求梦想的路上难免会遇到挑战和困难，但要保持积极乐观的态度，勇敢面对每一次失败，并从中吸取教训。
-
-希望这份指南能够对您有所帮助！如果在规划过程中有任何疑问或者需要进一步指导，请随时向我咨询。`,
-        type: 'agent',
-        category: 'planning',
-        timestamp: Date.now() + 2000
-      }
-      messages.value.push(aiDemoMessage)
     }
   }
+
   // 发送消息
   const sendMessage = async (messageText: string, category: string = 'general') => {
     if (!messageText.trim() || isLoading.value) return

@@ -1,293 +1,239 @@
 /**
  * ProgressiveRenderer - 渐进式渲染器
- * 基于Manus最佳实践，实现多阶段渲染策略
+ * 基于markdown-it-sse-template优化，集成OptimizedMarkdownRenderer
  */
-import MarkdownIt from 'markdown-it'
-import hljs from 'highlight.js'
+
+import { markdownRenderer, type MarkdownRenderOptions } from './OptimizedMarkdownRenderer'
 import { ErrorHandler } from './ErrorHandler'
 
 export type RenderPhase = 'text' | 'basic' | 'markdown' | 'enhanced'
 
-export interface RenderOptions {
+export interface ProgressiveRenderOptions {
   phase: RenderPhase
-  isStreaming: boolean
   enableCache: boolean
+  enableHighlight: boolean
+  enableLinkify: boolean
+  cssPrefix?: string
 }
 
 export class ProgressiveRenderer {
-  private md: MarkdownIt
-  private cache: Map<string, string> = new Map()
-  private maxCacheSize: number = 100
   private errorHandler: ErrorHandler
+  private renderCache = new Map<string, string>()
+  private maxCacheSize = 50
 
   constructor() {
     this.errorHandler = new ErrorHandler()
-    
-    // 配置markdown-it
-    this.md = new MarkdownIt({
-      html: true,
-      linkify: true,
-      typographer: true,
-      breaks: true,
-      highlight: function(code, lang) {
-        if (lang && hljs.getLanguage(lang)) {
-          try {
-            return hljs.highlight(code, { language: lang }).value
-          } catch (err) {
-            console.error('Highlight.js error:', err)
-          }
-        }
-        return hljs.highlightAuto(code).value
-      }
-    })
   }
 
   /**
    * 主渲染方法
    */
-  render(content: string, options: Partial<RenderOptions> = {}): string {
-    const opts: RenderOptions = {
+  render(content: string, options: Partial<ProgressiveRenderOptions> = {}): string {
+    const opts: ProgressiveRenderOptions = {
       phase: 'markdown',
-      isStreaming: false,
       enableCache: true,
+      enableHighlight: true,
+      enableLinkify: true,
       ...options
     }
 
-    // 检查缓存
-    if (opts.enableCache && !opts.isStreaming) {
-      const cacheKey = this.generateCacheKey(content, opts)
-      const cached = this.cache.get(cacheKey)
-      if (cached) {
-        this.errorHandler.recordCacheHit(true)
-        return cached
+    const startTime = performance.now()
+
+    try {
+      let result: string
+
+      switch (opts.phase) {
+        case 'text':
+          result = this.renderText(content)
+          break
+        case 'basic':
+          result = this.renderBasic(content)
+          break
+        case 'markdown':
+          result = this.renderMarkdown(content, opts)
+          break
+        case 'enhanced':
+          result = this.renderEnhanced(content, opts)
+          break
+        default:
+          result = this.renderMarkdown(content, opts)
       }
-      this.errorHandler.recordCacheHit(false)
-    }
 
-    // 使用错误处理包装器进行安全渲染
-    const result = this.errorHandler.safeRender(
-      () => this.renderByPhase(content, opts.phase, opts.isStreaming),
-      () => this.safeRender(content),
-      `${opts.phase}-render`
-    )
+      // 性能监控
+      const renderTime = performance.now() - startTime
+      this.errorHandler.monitorPerformance('render', renderTime)
 
-    // 缓存结果
-    if (opts.enableCache && !opts.isStreaming) {
-      this.setCachedResult(content, opts, result)
-    }
-
-    return result
-  }
-
-  /**
-   * 按阶段渲染
-   */
-  private renderByPhase(content: string, phase: RenderPhase, isStreaming: boolean): string {
-    switch (phase) {
-      case 'text':
-        return this.textOnlyRender(content)
-      
-      case 'basic':
-        return this.basicFormattingRender(content)
-      
-      case 'markdown':
-        return this.fullMarkdownRender(content, isStreaming)
-      
-      case 'enhanced':
-        return this.enhancedRender(content)
-      
-      default:
-        return this.textOnlyRender(content)
+      return result
+    } catch (error) {
+      return this.errorHandler.safeRender(() => {
+        throw error
+      }, content)
     }
   }
 
   /**
-   * 纯文本渲染（流式传输时使用）
+   * 纯文本渲染（流式阶段）
    */
-  private textOnlyRender(content: string): string {
+  private renderText(content: string): string {
     return content
-      // 基本的标点符号修复
-      .replace(/([^\s])\s*\n\s*([？！。，；：、])/g, '$1$2')
-      // 清理多余空格
-      .replace(/[ \t]+/g, ' ')
-      .replace(/[ \t]+$/gm, '')
-      // 转换换行为HTML
       .replace(/\n/g, '<br>')
+      .replace(/[ \t]+/g, ' ')
+      .trim()
   }
 
   /**
-   * 基础格式化渲染
+   * 基础格式渲染
    */
-  private basicFormattingRender(content: string): string {
+  private renderBasic(content: string): string {
     return content
-      // 标点符号修复
-      .replace(/([^\s])\s*\n\s*([？！。，；：、])/g, '$1$2')
-      // 基础markdown格式
+      // 基础粗体
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      // 基础斜体
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
-      // 简单的标题处理
-      .replace(/^(#{1,6})\s*(.+)$/gm, (match, hashes, content) => {
-        const level = hashes.length
-        return `<h${level}>${content.trim()}</h${level}>`
-      })
-      // 简单的列表处理
-      .replace(/^[-*+]\s+(.+)$/gm, '<li>$1</li>')
-      .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-      // 换行处理
+      // 基础换行
       .replace(/\n/g, '<br>')
+      // 清理空格
+      .replace(/[ \t]+/g, ' ')
+      .trim()
   }
 
   /**
-   * 完整markdown渲染
+   * 完整Markdown渲染
    */
-  private fullMarkdownRender(content: string, isStreaming: boolean): string {
-    // 预处理内容
-    const processedContent = this.preprocessContent(content)
+  private renderMarkdown(content: string, options: ProgressiveRenderOptions): string {
+    const cacheKey = `markdown-${JSON.stringify(options)}-${content}`
     
-    // 使用markdown-it进行完整渲染
-    return this.md.render(processedContent)
-  }
+    if (options.enableCache && this.renderCache.has(cacheKey)) {
+      return this.renderCache.get(cacheKey)!
+    }
 
-  /**
-   * 增强渲染（包含高级功能）
-   */
-  private enhancedRender(content: string): string {
-    let result = this.fullMarkdownRender(content, false)
-    
-    // 添加增强功能
-    result = this.addEnhancements(result)
-    
+    const markdownOptions: Partial<MarkdownRenderOptions> = {
+      mode: 'complete',
+      enableHtml: true,
+      enableLinkify: options.enableLinkify,
+      enableTypographer: true,
+      enableHighlight: options.enableHighlight,
+      cssPrefix: options.cssPrefix
+    }
+
+    const result = markdownRenderer.render(content, markdownOptions)
+
+    if (options.enableCache) {
+      this.cacheResult(cacheKey, result)
+    }
+
     return result
   }
 
   /**
-   * 安全渲染（错误回退）
+   * 增强渲染（添加额外功能）
    */
-  private safeRender(content: string): string {
-    return this.escapeHtml(content).replace(/\n/g, '<br>')
+  private renderEnhanced(content: string, options: ProgressiveRenderOptions): string {
+    let result = this.renderMarkdown(content, options)
+
+    // 添加数学公式支持（如果需要）
+    result = this.addMathSupport(result)
+
+    // 添加图表支持（如果需要）
+    result = this.addChartSupport(result)
+
+    // 添加任务列表支持
+    result = this.addTaskListSupport(result)
+
+    return result
   }
 
   /**
-   * 内容预处理
+   * 添加数学公式支持
    */
-  private preprocessContent(content: string): string {
-    return content
-      // 确保markdown标题格式正确
-      .replace(/^(#{1,6})([^#\s])/gm, '$1 $2') // 确保#后有空格
-      .replace(/^(#{1,6})[-]+\s*/gm, '$1 ') // 修正如'##-'为'## '
-      // 标点符号不分离
-      .replace(/([^\s])\s*\n\s*([？！。，；：、])/g, '$1$2')
-      // 清理多余空格
-      .replace(/[ \t]+/g, ' ')
-      .replace(/[ \t]+$/gm, '')
-      // 确保段落间有适当间距
-      .replace(/\n{3,}/g, '\n\n')
-      // 修复列表格式
-      .replace(/^(\s*)([-*+])\s+/gm, '$1$2 ')
-      // 修复引用格式
-      .replace(/^>\s*/gm, '> ')
+  private addMathSupport(html: string): string {
+    // 简单的数学公式支持
+    return html.replace(
+      /\$\$(.*?)\$\$/g,
+      '<div class="math-block">$1</div>'
+    ).replace(
+      /\$(.*?)\$/g,
+      '<span class="math-inline">$1</span>'
+    )
   }
 
   /**
-   * 添加增强功能
+   * 添加图表支持
    */
-  private addEnhancements(html: string): string {
-    // 添加代码复制按钮
-    html = html.replace(
-      /<pre><code class="language-(\w+)">/g,
-      '<div class="code-block-wrapper"><div class="code-header"><span class="language">$1</span><button class="copy-btn">复制</button></div><pre><code class="language-$1">'
+  private addChartSupport(html: string): string {
+    // 简单的图表标记支持
+    return html.replace(
+      /```chart\n([\s\S]*?)\n```/g,
+      '<div class="chart-container" data-chart="$1">图表加载中...</div>'
     )
-    
-    html = html.replace(
-      /<\/code><\/pre>/g,
-      '</code></pre></div>'
-    )
-    
-    // 添加表格响应式包装
-    html = html.replace(
-      /<table>/g,
-      '<div class="table-wrapper"><table>'
-    )
-    
-    html = html.replace(
-      /<\/table>/g,
-      '</table></div>'
-    )
-    
+  }
+
+  /**
+   * 添加任务列表支持
+   */
+  private addTaskListSupport(html: string): string {
     return html
+      .replace(/- \[ \]/g, '<input type="checkbox" disabled> ')
+      .replace(/- \[x\]/g, '<input type="checkbox" checked disabled> ')
   }
 
   /**
-   * HTML转义
+   * 流式渲染专用方法
    */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div')
-    div.textContent = text
-    return div.innerHTML
-  }
-
-  /**
-   * 生成缓存键
-   */
-  private generateCacheKey(content: string, options: RenderOptions): string {
-    const contentHash = content.length + '_' + content.slice(0, 50)
-    const optionsHash = JSON.stringify(options)
-    return `${contentHash}_${optionsHash}`
-  }
-
-  /**
-   * 设置缓存结果
-   */
-  private setCachedResult(content: string, options: RenderOptions, result: string): void {
-    if (this.cache.size >= this.maxCacheSize) {
-      // 删除最旧的缓存项
-      const firstKey = this.cache.keys().next().value
-      this.cache.delete(firstKey)
+  renderStream(content: string): string {
+    const markdownOptions: Partial<MarkdownRenderOptions> = {
+      mode: 'stream',
+      enableHtml: false,
+      enableLinkify: false,
+      enableTypographer: false,
+      enableHighlight: false
     }
-    
-    const key = this.generateCacheKey(content, options)
-    this.cache.set(key, result)
+
+    return markdownRenderer.render(content, markdownOptions)
+  }
+
+  /**
+   * 检查markdown完整性
+   */
+  isMarkdownComplete(content: string, position: number): boolean {
+    return markdownRenderer.isMarkdownComplete(content, position)
+  }
+
+  /**
+   * 缓存结果
+   */
+  private cacheResult(key: string, result: string) {
+    if (this.renderCache.size >= this.maxCacheSize) {
+      const firstKey = this.renderCache.keys().next().value
+      this.renderCache.delete(firstKey)
+    }
+    this.renderCache.set(key, result)
   }
 
   /**
    * 清理缓存
    */
-  clearCache(): void {
-    this.cache.clear()
+  clearCache() {
+    this.renderCache.clear()
+    markdownRenderer.clearCache()
   }
 
   /**
-   * 获取缓存统计
+   * 获取性能统计
    */
-  getCacheStats() {
+  getPerformanceStats() {
     return {
-      size: this.cache.size,
-      maxSize: this.maxCacheSize,
-      hitRate: this.errorHandler.getPerformanceReport().metrics.cacheHitRate
+      cache: {
+        size: this.renderCache.size,
+        maxSize: this.maxCacheSize,
+        hitRate: this.renderCache.size / this.maxCacheSize
+      },
+      markdown: markdownRenderer.getCacheStats(),
+      errors: this.errorHandler.getErrorStats()
     }
   }
-
-  /**
-   * 获取性能报告
-   */
-  getPerformanceReport() {
-    return this.errorHandler.getPerformanceReport()
-  }
-
-  /**
-   * 获取错误统计
-   */
-  getErrorStats() {
-    return this.errorHandler.getErrorStats()
-  }
-
-  /**
-   * 销毁渲染器
-   */
-  destroy(): void {
-    this.clearCache()
-    this.errorHandler.destroy()
-  }
 }
+
+// 导出单例实例
+export const progressiveRenderer = new ProgressiveRenderer()
 

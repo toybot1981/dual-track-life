@@ -61,10 +61,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick, watch, onUnmounted } from 'vue'
-import { useLifeAgentStore } from '@/stores/lifeAgent'
+import { storeToRefs } from 'pinia'
+import { useLifeAgentStore } from '../stores/lifeAgent'
+import { progressiveRenderer } from '../utils/ProgressiveRenderer'
+import { SmartScroller } from '../utils/SmartScroller'
 import { useI18n } from 'vue-i18n'
-import { ProgressiveRenderer } from '@/utils/ProgressiveRenderer'
-import { SmartScroller } from '@/utils/SmartScroller'
 
 const { t } = useI18n()
 const lifeAgentStore = useLifeAgentStore()
@@ -105,15 +106,21 @@ const quickAction = async (action: string) => {
 
 const formatMessage = (message: string, isStreaming: boolean = false, renderPhase: string = 'markdown') => {
   try {
-    // 使用渐进式渲染器
-    return progressiveRenderer.render(message, {
-      phase: renderPhase as any,
-      isStreaming: isStreaming,
-      enableCache: !isStreaming // 流式时不使用缓存
-    })
+    if (isStreaming) {
+      // 流式传输时使用简化渲染
+      return progressiveRenderer.renderStream(message)
+    } else {
+      // 完成时使用完整markdown渲染
+      return progressiveRenderer.render(message, {
+        phase: renderPhase as any,
+        enableCache: true,
+        enableHighlight: true,
+        enableLinkify: true
+      })
+    }
   } catch (error) {
-    console.error('Progressive render error:', error)
-    // 安全回退
+    console.error('Message formatting failed:', error)
+    // 错误回退
     return message.replace(/\n/g, '<br>')
   }
 }

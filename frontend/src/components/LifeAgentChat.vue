@@ -1,10 +1,10 @@
 <template>
   <div class="life-agent-chat">
     <div class="chat-header">
-      <h3>{{ $t('lifeAgent.title') }}</h3>
+      <h3>{{ t('lifeAgent.title') }}</h3>
       <div class="connection-status" :class="{ connected: lifeAgentStore.isConnected }">
         <span class="status-dot"></span>
-        {{ lifeAgentStore.isConnected ? $t('lifeAgent.connected') : $t('lifeAgent.disconnected') }}
+        {{ lifeAgentStore.isConnected ? t('lifeAgent.connected') : t('lifeAgent.disconnected') }}
       </div>
     </div>
     
@@ -12,7 +12,15 @@
       <div v-for="message in lifeAgentStore.messages" :key="message.id" 
            class="message" :class="message.type">
         <div class="message-content">
-          <div class="message-text" v-html="formatMessage(message.message, message.isStreaming, message.renderPhase)"></div>
+          <div class="message-text" v-html="formatMessage(message.message)"></div>
+          <div class="raw-message" style="margin-top: 8px; color: #888; font-size: 12px; background: #f4f4f4; padding: 6px 10px; border-radius: 6px; word-break: break-all;">
+            <strong>原始内容：</strong>
+            <pre style="white-space: pre-wrap; margin: 0; background: none; border: none; padding: 0;">{{ message.message }}</pre>
+          </div>
+          <div class="processed-message" style="margin-top: 4px; color: #888; font-size: 12px; background: #e9f7ef; padding: 6px 10px; border-radius: 6px; word-break: break-all;">
+            <strong>预处理后内容：</strong>
+            <pre style="white-space: pre-wrap; margin: 0; background: none; border: none; padding: 0;">{{ preprocessMarkdown(message.message) }}</pre>
+          </div>
           <div class="message-time">
             {{ formatTime(message.timestamp) }}
           </div>
@@ -33,20 +41,20 @@
     <div class="chat-input">
       <div class="quick-actions">
         <button @click="quickAction('planning')" class="quick-btn">
-          {{ $t('lifeAgent.quickActions.planning') }}
+          {{ t('lifeAgent.quickActions.planning') }}
         </button>
         <button @click="quickAction('evaluation')" class="quick-btn">
-          {{ $t('lifeAgent.quickActions.evaluation') }}
+          {{ t('lifeAgent.quickActions.evaluation') }}
         </button>
         <button @click="quickAction('goal')" class="quick-btn">
-          {{ $t('lifeAgent.quickActions.goal') }}
+          {{ t('lifeAgent.quickActions.goal') }}
         </button>
       </div>
       
       <div class="input-area">
         <textarea 
           v-model="inputMessage" 
-          :placeholder="$t('lifeAgent.inputPlaceholder')"
+          :placeholder="t('lifeAgent.inputPlaceholder')"
           @keydown.enter.prevent="sendMessage"
           @keydown.ctrl.enter="sendMessage"
           rows="2"
@@ -65,8 +73,15 @@ import { useLifeAgentStore } from '@/stores/lifeAgent'
 import { useI18n } from 'vue-i18n'
 import { ProgressiveRenderer } from '@/utils/ProgressiveRenderer'
 import { SmartScroller } from '@/utils/SmartScroller'
+import MarkdownIt from 'markdown-it'
+// 插件增强
+import markdownItHighlight from 'markdown-it-highlightjs'
+import markdownItSub from 'markdown-it-sub'
+import markdownItSup from 'markdown-it-sup'
+import markdownItTaskLists from 'markdown-it-task-lists'
 
-const { t } = useI18n()
+const i18n = useI18n()
+const { t } = i18n
 const lifeAgentStore = useLifeAgentStore()
 
 const inputMessage = ref('')
@@ -77,6 +92,24 @@ const progressiveRenderer = new ProgressiveRenderer()
 
 // 智能滚动管理器
 let smartScroller: SmartScroller | null = null
+
+// 配置markdown-it实例
+const md = MarkdownIt({
+  html: true,
+  breaks: true,
+  linkify: true,
+  typographer: true
+})
+  .use(markdownItHighlight)
+  .use(markdownItSub)
+  .use(markdownItSup)
+  .use(markdownItTaskLists)
+
+const preprocessMarkdown = (text: string) => {
+ 
+
+  return text
+}
 
 const sendMessage = async () => {
   if (!inputMessage.value.trim() || lifeAgentStore.isLoading) return
@@ -103,17 +136,14 @@ const quickAction = async (action: string) => {
   await sendMessage()
 }
 
-const formatMessage = (message: string, isStreaming: boolean = false, renderPhase: string = 'markdown') => {
+const formatMessage = (message: string) => {
   try {
-    // 使用渐进式渲染器
-    return progressiveRenderer.render(message, {
-      phase: renderPhase as any,
-      isStreaming: isStreaming,
-      enableCache: !isStreaming // 流式时不使用缓存
-    })
+    // 预处理 markdown，保证格式
+    let processedMessage = preprocessMarkdown(message)
+    // 直接 markdown-it 渲染
+    return md.render(processedMessage)
   } catch (error) {
-    console.error('Progressive render error:', error)
-    // 安全回退
+    console.error('Markdown渲染错误:', error)
     return message.replace(/\n/g, '<br>')
   }
 }
@@ -291,16 +321,7 @@ onUnmounted(() => {
 .message-text :deep(h4),
 .message-text :deep(h5),
 .message-text :deep(h6) {
-  margin: 12px 0 6px 0;
-  font-weight: 700;
-  line-height: 1.3;
-  color: #1f2937;
-  /* 确保标题正确换行 */
-  word-break: keep-all;
-  white-space: normal;
-  /* 增强标题视觉效果 */
-  display: block;
-  clear: both;
+  margin: 10px 0 4px 0;
 }
 
 .message-text :deep(h1) { 
@@ -356,18 +377,18 @@ onUnmounted(() => {
 }
 
 .message-text :deep(p) {
-  margin: 12px 0;
+  margin: 8px 0;
   line-height: 1.6;
 }
 
 .message-text :deep(ul),
 .message-text :deep(ol) {
-  margin: 16px 0;
-  padding-left: 24px;
+  margin: 8px 0;
+  padding-left: 20px;
 }
 
 .message-text :deep(li) {
-  margin: 6px 0;
+  margin: 2px 0;
   line-height: 1.5;
 }
 
@@ -383,7 +404,8 @@ onUnmounted(() => {
 .message-text :deep(ol ol),
 .message-text :deep(ul ol),
 .message-text :deep(ol ul) {
-  margin: 4px 0;
+  margin: 2px 0;
+  padding-left: 16px;
 }
 
 .message-text :deep(blockquote) {
@@ -460,9 +482,9 @@ onUnmounted(() => {
 }
 
 .message-text :deep(hr) {
+  margin: 10px 0;
   border: none;
   border-top: 1px solid #e0e0e0;
-  margin: 16px 0;
 }
 
 /* 用户消息中的markdown样式调整 */

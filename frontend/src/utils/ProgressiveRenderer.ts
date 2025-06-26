@@ -60,8 +60,8 @@ export class ProgressiveRenderer {
       }
 
       // 性能监控
-      const renderTime = performance.now() - startTime
-      this.errorHandler.monitorPerformance('render', renderTime)
+      // const renderTime = performance.now() - startTime
+      // this.errorHandler.monitorPerformance('render', renderTime)
 
       return result
     } catch (error) {

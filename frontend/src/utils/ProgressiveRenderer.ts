@@ -67,7 +67,7 @@ export class ProgressiveRenderer {
     } catch (error) {
       return this.errorHandler.safeRender(() => {
         throw error
-      }, content)
+      }, () => content)
     }
   }
 

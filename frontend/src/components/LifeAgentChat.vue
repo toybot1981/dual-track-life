@@ -63,7 +63,7 @@
 import { ref, onMounted, nextTick, watch, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useLifeAgentStore } from '../stores/lifeAgent'
-import { progressiveRenderer } from '../utils/ProgressiveRenderer'
+import { ProgressiveRenderer } from '../utils/ProgressiveRenderer'
 import { SmartScroller } from '../utils/SmartScroller'
 import { useI18n } from 'vue-i18n'
 

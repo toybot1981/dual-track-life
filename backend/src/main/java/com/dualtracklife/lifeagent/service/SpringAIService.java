@@ -67,7 +67,7 @@ public class SpringAIService {
                         DashScopeChatOptions.builder()
                                 .withTopP(0.7)
                                 .withTemperature(0.8)
-                                .withMaxTokens(2000) // 控制输出长度，适合流式传输
+                                // .withMaxTokens(2000) // 控制输出长度，适合流式传输
                                 .build()
                 )
                 .build();
